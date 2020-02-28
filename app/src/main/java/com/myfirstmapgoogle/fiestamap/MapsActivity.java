@@ -1,5 +1,7 @@
 package com.myfirstmapgoogle.fiestamap;
 
+import android.app.Activity;
+import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -10,18 +12,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -90,19 +96,27 @@ public class MapsActivity extends AppCompatActivity
         }
 
         // 화면에 띄우기
-        setContentView(R.layout.activity_maps);
+        setContentView(R.layout.mainactivity);
+
+        LinearLayout linearLayout = findViewById(R.id.linearLayout);
+        FrameLayout layout1= findViewById(R.id.layout1);
+        LinearLayout layout2= findViewById(R.id.layout2);
+        LinearLayout layout3= findViewById(R.id.layout3);
+        //버튼 객체화 해야함
 
         // PlacesClient 구성하기
-        Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고ㅓㅏ
+        Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고
         mPlacesClient = Places.createClient(this);
 
         // CFusedLocationProviderClient 구성하기
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
         // 맵 만들기
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        //
+
+       MapFragment mMapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.map);
+
+
+        mMapFragment.getMapAsync(this);
 
     }
 
@@ -126,6 +140,7 @@ public class MapsActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.current_place_menu, menu);
+
         return true;
     }
 
@@ -146,6 +161,8 @@ public class MapsActivity extends AppCompatActivity
      * 사용가능할때 맵 조종하기
      * 이 콜백은 맵이 사용될 준비가 됬을때 트리거됩니다.
      */
+    //onMapReadyCallback 인터페이스 구현 해야하는듯?
+
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;

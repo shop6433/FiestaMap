@@ -31,14 +31,20 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyC2Lu7MZgjUN_E6j6k-HopJXhdoRDIRfhY" />
 
+
+
+    <activity
+        android:name=".Intro"
+        android:label="@string/title_activity_maps">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
+
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
     </application>
 
