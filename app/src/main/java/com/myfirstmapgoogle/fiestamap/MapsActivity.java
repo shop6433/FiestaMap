@@ -1,7 +1,6 @@
 package com.myfirstmapgoogle.fiestamap;
 
 import android.app.Activity;
-import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -11,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -22,6 +22,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -44,14 +47,14 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * 현재위치를 보여주는 액티비티
  */
-public class MapsActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
@@ -84,10 +87,15 @@ public class MapsActivity extends AppCompatActivity
     private String[] mLikelyPlaceAddresses;
     private List[] mLikelyPlaceAttributions;
     private LatLng[] mLikelyPlaceLatLngs;
-
+    private ArrayList AList;
+    LinearLayout Textlayout;
+    int count = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.mainactivity);
+        Textlayout = findViewById(R.id.Textlayout);
+        Textlayout.setVisibility(View.INVISIBLE);
 
         //저장된 인스턴스 상태에 의해 얻어진 장소와 카메라 포지션
         if (savedInstanceState != null) {  //저장된 장소가 있으면
@@ -96,13 +104,25 @@ public class MapsActivity extends AppCompatActivity
         }
 
         // 화면에 띄우기
-        setContentView(R.layout.mainactivity);
+        //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
+        AList = new ArrayList();
+        Button button1 = findViewById(R.id.button1);Button button2 = findViewById(R.id.button2);
+        Button button3 = findViewById(R.id.button3);Button button4 = findViewById(R.id.button4);
+        Button button5 = findViewById(R.id.button5);
+        AList.add(button1);AList.add(button2);AList.add(button3);AList.add(button4);AList.add(button5);
+        Button add_button = findViewById(R.id.button6);
 
-        LinearLayout linearLayout = findViewById(R.id.linearLayout);
-        FrameLayout layout1= findViewById(R.id.layout1);
-        LinearLayout layout2= findViewById(R.id.layout2);
-        LinearLayout layout3= findViewById(R.id.layout3);
-        //버튼 객체화 해야함
+//        추가하기 버튼이 클릭 되었을 때
+        add_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Textlayout.setVisibility(View.VISIBLE);
+                Button button = (Button)AList.get(count);
+                button.setText(count+" 번째");
+                count++;
+            }
+        });
 
         // PlacesClient 구성하기
         Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고
@@ -111,13 +131,8 @@ public class MapsActivity extends AppCompatActivity
         // CFusedLocationProviderClient 구성하기
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         // 맵 만들기
-        //
-
-       MapFragment mMapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.map);
-
-
-        mMapFragment.getMapAsync(this);
-
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
 
     /**
@@ -161,7 +176,7 @@ public class MapsActivity extends AppCompatActivity
      * 사용가능할때 맵 조종하기
      * 이 콜백은 맵이 사용될 준비가 됬을때 트리거됩니다.
      */
-    //onMapReadyCallback 인터페이스 구현 해야하는듯?
+
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -175,14 +190,11 @@ public class MapsActivity extends AppCompatActivity
             public View getInfoWindow(Marker arg0) {
                 return null;
             }
-
             @Override
             public View getInfoContents(Marker marker) {
                 //info window와 tile, snippet(정보)을 위한 layout Inflate(부풀리기)
                 //말이 좀 어려운데 inflater가 흠... R.xxx파일 불러오는 거 같은거임
-                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents,
-                        (FrameLayout) findViewById(R.id.map), false);
-
+                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, (FrameLayout) findViewById(R.id.map), false);
                 TextView title = infoWindow.findViewById(R.id.title);
                 title.setText(marker.getTitle());
 
@@ -422,5 +434,8 @@ public class MapsActivity extends AppCompatActivity
         } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
+    }
+    public boolean getpermission(){
+        return mLocationPermissionGranted;
     }
 }
