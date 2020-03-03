@@ -49,6 +49,9 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
 import java.util.List;
 
 /**
@@ -90,6 +93,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList AList;
     LinearLayout Textlayout;
     int count = 0;
+
+    // 현재시간을 msec 으로 구한다.
+    long now = System.currentTimeMillis();
+    // 현재시간을 date 변수에 저장한다.
+    Date date = new Date(now);
+    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
+    SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    // nowDate 변수에 값을 저장한다.
+    String formatDate = sdfNow.format(date);
+
+    TextView dateNow;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +126,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Button button5 = findViewById(R.id.button5);
         AList.add(button1);AList.add(button2);AList.add(button3);AList.add(button4);AList.add(button5);
         Button add_button = findViewById(R.id.button6);
+
+        //날짜 출력
+        dateNow = (TextView) findViewById(R.id.textView1);
+        dateNow.setText(formatDate);
 
 //        추가하기 버튼이 클릭 되었을 때
         add_button.setOnClickListener(new View.OnClickListener() {
