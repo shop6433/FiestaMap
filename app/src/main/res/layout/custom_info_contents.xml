@@ -5,24 +5,8 @@
     android:layoutDirection="locale"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="ㅇㅇㅇㅇ"
-        android:textColor="#ff000000"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/snippet"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ㅇㅇㅇㅇㅇ"
-        android:textColor="#ff7f7f7f" />
-
     <Button
-        android:id="@+id/button4"
+        android:id="@+id/button11"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Button" />

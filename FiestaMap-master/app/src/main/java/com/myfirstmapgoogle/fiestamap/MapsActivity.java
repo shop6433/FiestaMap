@@ -1,27 +1,36 @@
 package com.myfirstmapgoogle.fiestamap;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -30,6 +39,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.PlaceLikelihood;
@@ -37,17 +47,23 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.text.SimpleDateFormat;
+
 import java.util.List;
 
 /**
  * 현재위치를 보여주는 액티비티
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
-
+    class Info{ //값을 저장하기 위한 클래스
+        String Time;
+        String Name;
+        String Adress;
+        String Memo;
+    }
     private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
     private CameraPosition mCameraPosition;
@@ -60,7 +76,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     //한국(서울)으로 디폴트값 설정
     // 권한 부여받지 못하면 서울로 ㄱㄱ
-    private final LatLng mDefaultLocation = new LatLng(35.888, 128.65);
+    private final LatLng mDefaultLocation = new LatLng(37.5670135, 126.9783740);
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
@@ -80,12 +96,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List[] mLikelyPlaceAttributions;
     private LatLng[] mLikelyPlaceLatLngs;
     private ArrayList AList;
-    private ArrayList MarkerList;
     LinearLayout Textlayout;
     int count = 0;
-    private EditText editText1;
-    private EditText editText2;
-    private EditText editText3;
 
     // 현재시간을 msec 으로 구한다.
     long now = System.currentTimeMillis();
@@ -114,59 +126,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // 화면에 띄우기
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
         AList = new ArrayList();
-        MarkerList = new ArrayList();
-        Button button1 = findViewById(R.id.button1);
-        Button button2 = findViewById(R.id.button2);
-        Button button3 = findViewById(R.id.button3);
-        Button button4 = findViewById(R.id.button4);
+        Button button1 = findViewById(R.id.button1);Button button2 = findViewById(R.id.button2);
+        Button button3 = findViewById(R.id.button3);Button button4 = findViewById(R.id.button4);
         Button button5 = findViewById(R.id.button5);
-        AList.add(button1);
-        AList.add(button2);
-        AList.add(button3);
-        AList.add(button4);
-        AList.add(button5);
+        AList.add(button1);AList.add(button2);AList.add(button3);AList.add(button4);AList.add(button5);
         Button add_button = findViewById(R.id.button6);
-        Button add_ok_btn = findViewById(R.id.add_ok_btn);
-        Button add_cancel_btn = findViewById(R.id.add_cancel_btn);
-        editText1 = findViewById(R.id.editText1);
-        editText2 = findViewById(R.id.editText2);
-        editText3 = findViewById(R.id.editText3);
 
         //날짜 출력
         dateNow = (TextView) findViewById(R.id.textView1);
         dateNow.setText(formatDate);
-
+        Info info = new Info();
 //        추가하기 버튼이 클릭 되었을 때
         add_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Textlayout.setVisibility(View.VISIBLE);
-                Button button = (Button) AList.get(count);
-                button.setText(count + " 번째");
+                Button button = (Button)AList.get(count);
+                button.setText(count+" 번째");
                 count++;
-            }
-        });
-        add_ok_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = editText1.getText().toString();
-                String place = editText2.getText().toString();
-                String memo = editText3.getText().toString();
-                myAddMarker(name, place, memo);
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
-
-            }
-        });
-        add_cancel_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
             }
         });
 
@@ -195,19 +172,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * 옵션매뉴 설정
-     *
      * @param menu The options menu.
      * @return Boolean.
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.current_place_menu, menu);
+
         return true;
     }
 
     /**
      * 장소를 얻기위해 매뉴클릭 옵션 조정하기
-     *
      * @param item The menu item to handle.
      * @return Boolean.
      */
@@ -228,28 +204,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
+        LatLng test = new LatLng(mmLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
+        Marker mTest = mMap.addMarker(new MarkerOptions().position(test).title("Test"));
+        mPerth = mMap.addMarker(new MarkerOptions().position(test).title("Perth"));
+        mPerth.setTag(0);
 
         //info window contents의 다중 라인을 halndle하기 뒤한 커스텀 info window adapter
-//        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-//            @Override
-//            //여기서 null을 반환하면 getInfoContents()가 콜됨
-//            public View getInfoWindow(Marker arg0) {
-//                return null;
-//            }
-//            @Override
-//            public View getInfoContents(Marker marker) {
-//                //정보창 커스텀하기
-//                //말이 좀 어려운데 inflater가 흠... R.xxx파일 불러오는 거 같은거임
-//                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, (FrameLayout) findViewById(R.id.map), false);
-//                TextView title = infoWindow.findViewById(R.id.title);
-//                title.setText(marker.getTitle());
-//
-//               TextView snippet = infoWindow.findViewById(R.id.snippet);
-//                snippet.setText(marker.getSnippet());
-//
-//                return infoWindow;
-//            }
-//        });
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            //여기서 null을 반환하면 getInfoContents()가 콜됨
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+            @Override
+            public View getInfoContents(Marker marker) {
+                //info window와 tile, snippet(정보)을 위한 layout Inflate(부풀리기)
+                //말이 좀 어려운데 inflater가 흠... R.xxx파일 불러오는 거 같은거임
+                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, (FrameLayout) findViewById(R.id.map), false);
+                TextView title = infoWindow.findViewById(R.id.title);
+                title.setText(marker.getTitle());
+
+                TextView snippet = infoWindow.findViewById(R.id.snippet);
+                snippet.setText(marker.getSnippet());
+
+                return infoWindow;
+            }
+        });
 
         //유저에게 permission을 촉발시키기
         getLocationPermission();
@@ -293,7 +273,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 });
             }
-        } catch (SecurityException e) {
+        } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
     }
@@ -319,6 +299,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
+     *
      * location permission 요구 결과를 다룸
      */
     @Override
@@ -358,9 +339,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     FindCurrentPlaceRequest.newInstance(placeFields);
 
             //근처 장소(원문 likely place)얻기 - 즉, 비즈니스와 다른 명소들(디바이스의 현 위치와 가장 맞는 장소)
-            @SuppressWarnings("MissingPermission") final Task<FindCurrentPlaceResponse> placeResult =
+            @SuppressWarnings("MissingPermission") final
+            Task<FindCurrentPlaceResponse> placeResult =
                     mPlacesClient.findCurrentPlace(request);
-            placeResult.addOnCompleteListener(new OnCompleteListener<FindCurrentPlaceResponse>() {
+            placeResult.addOnCompleteListener (new OnCompleteListener<FindCurrentPlaceResponse>() {
                 @Override
                 public void onComplete(@NonNull Task<FindCurrentPlaceResponse> task) {
                     if (task.isSuccessful() && task.getResult() != null) {
@@ -398,7 +380,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         //유저에게 근처장소(likely place)를 제안하는 dialog를 보여주고, 지정된 장소에 marker 추거
                         MapsActivity.this.openPlacesDialog();
-                    } else {
+                    }
+                    else {
                         Log.e(TAG, "Exception: %s", task.getException());
                     }
                 }
@@ -412,7 +395,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.addMarker(new MarkerOptions()
                     .title("marker?")//요건그냥 내가 임의로 적은거임 오류나서 내용 바꿈
                     .position(mDefaultLocation)
-            );
+                   );
 
             //퍼미션 하라고 요구
             getLocationPermission();
@@ -474,28 +457,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mLastKnownLocation = null;
                 getLocationPermission();
             }
-        } catch (SecurityException e) {
+        } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
     }
-
-    public boolean getpermission() {
+    public boolean getpermission(){
         return mLocationPermissionGranted;
-    }
-
-
-    private void myAddMarker(final String name, final String place, final String memo) {
-        if (mLastKnownLocation != null) {
-            Marker myMarker = mMap.addMarker(new MarkerOptions().
-                    position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
-                    .title(name)
-                    .snippet(place + "\n" + memo));
-            MarkerList.add(myMarker);
-
-        }
-    }
-
-    public void onInfoWindowClick(Marker marker){
-        marker.showInfoWindow();
     }
 }
