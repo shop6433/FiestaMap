@@ -2,6 +2,8 @@ package com.myfirstmapgoogle.fiestamap;
 
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +39,7 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +69,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean mLocationPermissionGranted;
 
     //Fused Location Provider에의해 마지막으로 얻어진 장소
-
     private Location mLastKnownLocation;
 
     // 액티비티 상태를 알려주는 키
@@ -83,20 +85,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ArrayList MarkerList;
     LinearLayout Textlayout;
     int count = 0;
-    private EditText editText1;
-    private EditText editText2;
-    private EditText editText3;
-
-    // 현재시간을 msec 으로 구한다.
-    long now = System.currentTimeMillis();
-    // 현재시간을 date 변수에 저장한다.
-    Date date = new Date(now);
-    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
-    SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    // nowDate 변수에 값을 저장한다.
-    String formatDate = sdfNow.format(date);
-
-    TextView dateNow;
+    private EditText et_objectName;
+    private EditText et_objectLocation;
+    private EditText et_memo;
+    private Geocoder geocoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,65 +103,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
-        // 화면에 띄우기
-        //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
-        AList = new ArrayList();
-        MarkerList = new ArrayList();
-        Button button1 = findViewById(R.id.button1);
-        Button button2 = findViewById(R.id.button2);
-        Button button3 = findViewById(R.id.button3);
-        Button button4 = findViewById(R.id.button4);
-        Button button5 = findViewById(R.id.button5);
-        AList.add(button1);
-        AList.add(button2);
-        AList.add(button3);
-        AList.add(button4);
-        AList.add(button5);
-        Button add_button = findViewById(R.id.button6);
-        Button add_ok_btn = findViewById(R.id.add_ok_btn);
-        Button add_cancel_btn = findViewById(R.id.add_cancel_btn);
-        editText1 = findViewById(R.id.editText1);
-        editText2 = findViewById(R.id.editText2);
-        editText3 = findViewById(R.id.editText3);
-
-        //날짜 출력
-        dateNow = (TextView) findViewById(R.id.textView1);
-        dateNow.setText(formatDate);
-
-//        추가하기 버튼이 클릭 되었을 때
-        add_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Textlayout.setVisibility(View.VISIBLE);
-                Button button = (Button) AList.get(count);
-                button.setText(count + " 번째");
-                count++;
-            }
-        });
-        add_ok_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = editText1.getText().toString();
-                String place = editText2.getText().toString();
-                String memo = editText3.getText().toString();
-                myAddMarker(name, place, memo);
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
-
-            }
-        });
-        add_cancel_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
-            }
-        });
-
         // PlacesClient 구성하기
         Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고
         mPlacesClient = Places.createClient(this);
@@ -179,8 +112,100 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // 맵 만들기
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-    }
 
+        // 화면에 띄우기
+
+        //날짜 출력
+        /**
+         * 현재시간을 구하기
+         * */
+        TextView tv_dateNow; //현재 시간
+        long now = System.currentTimeMillis();    // 현재시간을 msec 으로 구한다.
+        Date date = new Date(now);    // 현재시간을 date 변수에 저장한다.
+        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm");    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
+        String formatDate = sdfNow.format(date);     // nowDate 변수에 값을 저장한다.
+        tv_dateNow = (TextView) findViewById(R.id.tv_dateNow);
+        tv_dateNow.setText(formatDate);
+
+        //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
+        AList = new ArrayList();
+        MarkerList = new ArrayList();
+
+        //추가된 물건 버튼
+        Button btn_object1 = findViewById(R.id.btn_object1);
+        Button btn_object2 = findViewById(R.id.btn_object2);
+        Button btn_object3 = findViewById(R.id.btn_object3);
+        Button btn_object4 = findViewById(R.id.btn_object4);
+        Button btn_object5 = findViewById(R.id.btn_object5);
+        AList.add(btn_object1);
+        AList.add(btn_object2);
+        AList.add(btn_object3);
+        AList.add(btn_object4);
+        AList.add(btn_object5);
+        Button btn_add = findViewById(R.id.btn_add); // 추가하기 버튼
+        Button btn_locationNow = findViewById(R.id.btn_locationNow);
+        Button btn_add_ok = findViewById(R.id.btn_add_ok); // 정보추가 버튼
+        Button btn_add_cancel = findViewById(R.id.btn_add_cancel); // 정보추가 취소 버튼
+
+        et_objectName = findViewById(R.id.et_objectName);
+        et_objectLocation = findViewById(R.id.et_objectLocation);
+        et_memo = findViewById(R.id.et_memo);
+
+        //추가하기 버튼이 클릭 되었을 때
+        btn_add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Textlayout.setVisibility(View.VISIBLE);
+                Button button = (Button) AList.get(count);
+                button.setText(count + " 번째");
+                count++;
+            }
+        });
+        geocoder = new Geocoder(this);
+        btn_locationNow.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                List<Address> list = null;
+                try{
+                    list = geocoder.getFromLocation(mLastKnownLocation.getLatitude(),mLastKnownLocation.getLongitude(),10);
+                }catch(IOException e){
+                    Log.e("test","주소변환 에러");
+                }
+                if(list!=null){
+                    if(list.size()==0){
+                        et_objectLocation.setHint("주소가 없음");
+                    }
+                    else {
+                        et_objectLocation.setText(list.get(0).getAddressLine(0).toString());
+                    }
+                }
+            }
+        });
+        //추가 버튼 클릭
+        btn_add_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = et_objectName.getText().toString();
+                String place = et_objectLocation.getText().toString();
+                String memo = et_memo.getText().toString();
+                myAddMarker(name, place, memo);
+                et_objectName.setText("");
+                et_objectLocation.setText("");
+                et_memo.setText("");
+                Textlayout.setVisibility(View.INVISIBLE);
+            }
+        });
+        //취소 버튼 클릭
+        btn_add_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("");
+                et_objectLocation.setText("");
+                et_memo.setText("");
+                Textlayout.setVisibility(View.INVISIBLE);
+            }
+        });
+    }
     /**
      * 액티비티가 pause 되었을 때 상태 저장하기
      */
@@ -192,7 +217,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             super.onSaveInstanceState(outState);
         }
     }
-
     /**
      * 옵션매뉴 설정
      *
@@ -223,8 +247,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * 사용가능할때 맵 조종하기
      * 이 콜백은 맵이 사용될 준비가 됬을때 트리거됩니다.
      */
-
-
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
@@ -297,7 +319,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.e("Exception: %s", e.getMessage());
         }
     }
-
 
     /**
      * 장소를 얻기위한 permission을 촉발함
@@ -394,8 +415,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 break;
                             }
                         }
-
-
                         //유저에게 근처장소(likely place)를 제안하는 dialog를 보여주고, 지정된 장소에 marker 추거
                         MapsActivity.this.openPlacesDialog();
                     } else {
@@ -413,7 +432,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .title("marker?")//요건그냥 내가 임의로 적은거임 오류나서 내용 바꿈
                     .position(mDefaultLocation)
             );
-
             //퍼미션 하라고 요구
             getLocationPermission();
         }
@@ -482,7 +500,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public boolean getpermission() {
         return mLocationPermissionGranted;
     }
-
 
     private void myAddMarker(final String name, final String place, final String memo) {
         if (mLastKnownLocation != null) {
