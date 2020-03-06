@@ -1,7 +1,10 @@
 package com.myfirstmapgoogle.fiestamap;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -37,6 +41,13 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +58,8 @@ import java.util.List;
  * 현재위치를 보여주는 액티비티
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+
+    public static Context mContext;
 
     private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
@@ -66,7 +79,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private boolean mLocationPermissionGranted;
 
     //Fused Location Provider에의해 마지막으로 얻어진 장소
-
     private Location mLastKnownLocation;
 
     // 액티비티 상태를 알려주는 키
@@ -80,24 +92,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List[] mLikelyPlaceAttributions;
     private LatLng[] mLikelyPlaceLatLngs;
     private ArrayList AList;
-    private ArrayList MarkerList;
+    private ArrayList<Marker> MarkerList;
     LinearLayout Textlayout;
     int count = 0;
-    private EditText editText1;
-    private EditText editText2;
-    private EditText editText3;
-
-    // 현재시간을 msec 으로 구한다.
-    long now = System.currentTimeMillis();
-    // 현재시간을 date 변수에 저장한다.
-    Date date = new Date(now);
-    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
-    SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-    // nowDate 변수에 값을 저장한다.
-    String formatDate = sdfNow.format(date);
-
-    TextView dateNow;
-
+    private EditText et_objectName;
+    private EditText et_objectLocation;
+    private EditText et_memo;
+    private Geocoder geocoder;
+    File file;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,39 +107,77 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Textlayout = findViewById(R.id.Textlayout);
         Textlayout.setVisibility(View.INVISIBLE);
 
+
+        mContext = this;
+
         //저장된 인스턴스 상태에 의해 얻어진 장소와 카메라 포지션
         if (savedInstanceState != null) {  //저장된 장소가 있으면
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
             mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
+        // PlacesClient 구성하기
+        Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고
+        mPlacesClient = Places.createClient(this);
+
+        // CFusedLocationProviderClient 구성하기
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+        // 맵 만들기
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
         // 화면에 띄우기
+
+        //날짜 출력
+        /**
+         * 현재시간을 구하기
+         * */
+        final TextView tv_dateNow; //현재 시간
+        long now = System.currentTimeMillis();    // 현재시간을 msec 으로 구한다.
+        Date date = new Date(now);    // 현재시간을 date 변수에 저장한다.
+        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm");    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
+        String formatDate = sdfNow.format(date);     // nowDate 변수에 값을 저장한다.
+        tv_dateNow = (TextView) findViewById(R.id.tv_dateNow);
+        tv_dateNow.setText(formatDate);
+
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
         AList = new ArrayList();
         MarkerList = new ArrayList();
-        Button button1 = findViewById(R.id.button1);
-        Button button2 = findViewById(R.id.button2);
-        Button button3 = findViewById(R.id.button3);
-        Button button4 = findViewById(R.id.button4);
-        Button button5 = findViewById(R.id.button5);
-        AList.add(button1);
-        AList.add(button2);
-        AList.add(button3);
-        AList.add(button4);
-        AList.add(button5);
-        Button add_button = findViewById(R.id.button6);
-        Button add_ok_btn = findViewById(R.id.add_ok_btn);
-        Button add_cancel_btn = findViewById(R.id.add_cancel_btn);
-        editText1 = findViewById(R.id.editText1);
-        editText2 = findViewById(R.id.editText2);
-        editText3 = findViewById(R.id.editText3);
 
-        //날짜 출력
-        dateNow = (TextView) findViewById(R.id.textView1);
-        dateNow.setText(formatDate);
+        //추가된 물건 버튼
+        Button btn_object1 = findViewById(R.id.btn_object1);
+        Button btn_object2 = findViewById(R.id.btn_object2);
+        Button btn_object3 = findViewById(R.id.btn_object3);
+        Button btn_object4 = findViewById(R.id.btn_object4);
+        Button btn_object5 = findViewById(R.id.btn_object5);
+        AList.add(btn_object1);
+        AList.add(btn_object2);
+        AList.add(btn_object3);
+        AList.add(btn_object4);
+        AList.add(btn_object5);
+        Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
+        Button btn_locationNow = findViewById(R.id.btn_locationNow); // 현재위치 버튼
 
-//        추가하기 버튼이 클릭 되었을 때
-        add_button.setOnClickListener(new View.OnClickListener() {
+        Button btn_bike = findViewById(R.id.btn_bike);
+        Button btn_book = findViewById(R.id.btn_book);
+        Button btn_labtop = findViewById(R.id.btn_laptop);
+        Button btn_car = findViewById(R.id.btn_car);
+        String bike = "자전거";
+        String book = "책";
+        String labtop = "노트북";
+        String car = "차";
+
+        Button btn_add_ok = findViewById(R.id.btn_add_ok); // 확인 버튼
+        Button btn_add_cancel = findViewById(R.id.btn_add_cancel); // 취소 버튼
+
+        et_objectName = findViewById(R.id.et_objectName);
+        et_objectLocation = findViewById(R.id.et_objectLocation);
+        et_memo = findViewById(R.id.et_memo);
+
+
+        //물건추가 버튼
+        btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Textlayout.setVisibility(View.VISIBLE);
@@ -146,41 +186,97 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 count++;
             }
         });
-        add_ok_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = editText1.getText().toString();
-                String place = editText2.getText().toString();
-                String memo = editText3.getText().toString();
-                myAddMarker(name, place, memo);
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
 
+        //현재위치 버튼
+        geocoder = new Geocoder(this);
+        btn_locationNow.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                List<Address> list = null;
+                try{
+                    list = geocoder.getFromLocation(mLastKnownLocation.getLatitude(),mLastKnownLocation.getLongitude(),10);
+                }catch(IOException e){
+                    Log.e("test","주소변환 에러");
+                }
+                if(list!=null){
+                    if(list.size()==0){
+                        et_objectLocation.setHint("주소가 없음");
+                    }
+                    else {
+                        et_objectLocation.setText(list.get(0).getAddressLine(0).toString());
+                    }
+                }
             }
         });
-        add_cancel_btn.setOnClickListener(new View.OnClickListener() {
+        //자전거 버튼
+        btn_bike.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                editText1.setText("");
-                editText2.setText("");
-                editText3.setText("");
+                et_objectName.setText("자전거");
+            }
+        });
+        //롱 클릭 시 이름 따로 지정
+//        btn_bike.setOnLongClickListener(new View.OnLongClickListener(){
+//            @Override
+//            public  boolean onLongClick(View v){
+//
+//            }
+//        });
+        //책 버튼
+        btn_book.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("책");
+            }
+        });
+        //노트북 버튼
+        btn_labtop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("노트북");
+            }
+        });
+        //자동차 버튼
+        btn_car.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("자동차");
+            }
+        });
+        //더보기 버튼
+//        btn_more.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                et_objectName.setText("미구현");
+//            }
+//        });
+        //확인 버튼
+        btn_add_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = et_objectName.getText().toString();
+                String place = et_objectLocation.getText().toString();
+                String memo = et_memo.getText().toString();
+                String time = tv_dateNow.getText().toString();
+
+                myAddMarker(name, place, memo, time);
+                et_objectName.setText("");
+                et_objectLocation.setText("");
+                et_memo.setText("");
                 Textlayout.setVisibility(View.INVISIBLE);
             }
         });
-
-        // PlacesClient 구성하기
-        Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));//구글 키를 가져오고
-        mPlacesClient = Places.createClient(this);
-
-        // CFusedLocationProviderClient 구성하기
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        // 맵 만들기
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        //취소 버튼
+        btn_add_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("");
+                et_objectLocation.setText("");
+                et_memo.setText("");
+                Textlayout.setVisibility(View.INVISIBLE);
+            }
+        });
     }
-
     /**
      * 액티비티가 pause 되었을 때 상태 저장하기
      */
@@ -192,7 +288,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             super.onSaveInstanceState(outState);
         }
     }
-
     /**
      * 옵션매뉴 설정
      *
@@ -223,8 +318,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * 사용가능할때 맵 조종하기
      * 이 콜백은 맵이 사용될 준비가 됬을때 트리거됩니다.
      */
-
-
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
@@ -259,6 +352,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //디바이스의 현위치를 얻어서 맵에 띄움
         getDeviceLocation();
+
+        //마커 불러오기
+        loadMarker();
+
     }
 
     /**
@@ -298,11 +395,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
     /**
      * 장소를 얻기위한 permission을 촉발함
      */
-    private void getLocationPermission() {
+    public void getLocationPermission() {
         /*
          * 현 위치를 알수 있도록 location permission을 요구
          * permission의 결과는 onRequestPermissionsResult(콜백) 에 의해 다뤄짐
@@ -394,8 +490,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 break;
                             }
                         }
-
-
                         //유저에게 근처장소(likely place)를 제안하는 dialog를 보여주고, 지정된 장소에 marker 추거
                         MapsActivity.this.openPlacesDialog();
                     } else {
@@ -413,7 +507,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .title("marker?")//요건그냥 내가 임의로 적은거임 오류나서 내용 바꿈
                     .position(mDefaultLocation)
             );
-
             //퍼미션 하라고 요구
             getLocationPermission();
         }
@@ -483,19 +576,89 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return mLocationPermissionGranted;
     }
 
-
-    private void myAddMarker(final String name, final String place, final String memo) {
+    private void myAddMarker(final String name, final String place, final String memo,final String time) {
+        FileOutputStream fos = null;
+        String myLatitude;
+        String myLongitude;
         if (mLastKnownLocation != null) {
             Marker myMarker = mMap.addMarker(new MarkerOptions().
                     position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
                     .title(name)
-                    .snippet(place + "\n" + memo));
-            MarkerList.add(myMarker);
+                    .snippet(time+"\n"+place +"\n" + memo));
+            //좌표를 String 타입으로 변환
+            myLatitude = Double.toString(mLastKnownLocation.getLatitude());
+            myLongitude = Double.toString(mLastKnownLocation.getLongitude());
+            try {
+                String a = "\r\n";
+                fos = openFileOutput("internal.txt", Context.MODE_APPEND);
+                fos.write(myLatitude.getBytes());fos.write(a.getBytes());
+                fos.write(myLongitude.getBytes());fos.write(a.getBytes());
+                fos.write(name.getBytes());fos.write(a.getBytes());
+                fos.write(place.getBytes());fos.write(a.getBytes());
+                fos.write(memo.getBytes());fos.write(a.getBytes());
+                fos.write(time.getBytes());fos.write(a.getBytes());
+                fos.close();
+                //latitude, longitude, name, place, memo, time 순으로 저장, 줄바꿈으로 칸 나누기
+                Toast.makeText(MapsActivity.this,"저장완료",Toast.LENGTH_LONG).show();
 
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            MarkerList.add(myMarker);
         }
+        else Toast.makeText(MapsActivity.this,"위치를 알 수 없습니다.",Toast.LENGTH_LONG).show();
     }
 
     public void onInfoWindowClick(Marker marker){
         marker.showInfoWindow();
+    }
+
+    public void loadMarker(){
+        String data = null;
+//        StringBuffer Strbuffer = new StringBuffer();
+        FileInputStream fis = null;
+        String myLatitude = "";
+        String myLongitude = "";
+        String name = "";
+        String place = "";
+        String memo = "";
+        String time = "";
+        double Latitude;
+        double Longitude;
+        int i = 0;
+        try{
+            fis = openFileInput("internal.txt");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
+            data = bufferedReader.readLine();
+            while(data != null) {
+                if(i==0)myLatitude = data;
+                else if(i==1)myLongitude = data;
+                else if (i==2)name = data;
+                else if (i==3)place = data;
+                else if (i==4)memo = data;
+                else if (i==5)time = data;
+                i++;
+                if(i>5){
+                    Latitude = Double.parseDouble(myLatitude);
+                    Longitude = Double.parseDouble(myLongitude);
+                    Marker myMarker = mMap.addMarker(new MarkerOptions().
+                            position(new LatLng(Latitude,Longitude))
+                            .title(name)
+                            .snippet(time+"\n"+place +"\n" + memo));
+                    MarkerList.add(myMarker);
+                    i=0;
+                }
+//                Strbuffer.append(data).append("/n");
+                data = bufferedReader.readLine();
+            }
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }
