@@ -1,5 +1,6 @@
 package com.myfirstmapgoogle.fiestamap;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -51,6 +52,8 @@ import java.util.List;
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
+    public static Context mContext;
+
     private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
     private CameraPosition mCameraPosition;
@@ -97,6 +100,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Textlayout = findViewById(R.id.Textlayout);
         Textlayout.setVisibility(View.INVISIBLE);
 
+        mContext = this;
+
         //저장된 인스턴스 상태에 의해 얻어진 장소와 카메라 포지션
         if (savedInstanceState != null) {  //저장된 장소가 있으면
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
@@ -109,6 +114,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // CFusedLocationProviderClient 구성하기
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
         // 맵 만들기
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -142,16 +148,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         AList.add(btn_object3);
         AList.add(btn_object4);
         AList.add(btn_object5);
-        Button btn_add = findViewById(R.id.btn_add); // 추가하기 버튼
-        Button btn_locationNow = findViewById(R.id.btn_locationNow);
-        Button btn_add_ok = findViewById(R.id.btn_add_ok); // 정보추가 버튼
-        Button btn_add_cancel = findViewById(R.id.btn_add_cancel); // 정보추가 취소 버튼
+        Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
+        Button btn_locationNow = findViewById(R.id.btn_locationNow); // 현재위치 버튼
+
+        Button btn_bike = findViewById(R.id.btn_bike);
+        Button btn_book = findViewById(R.id.btn_book);
+        Button btn_labtop = findViewById(R.id.btn_laptop);
+        Button btn_car = findViewById(R.id.btn_car);
+        String bike = "자전거";
+        String book = "책";
+        String labtop = "노트북";
+        String car = "차";
+
+        Button btn_add_ok = findViewById(R.id.btn_add_ok); // 확인 버튼
+        Button btn_add_cancel = findViewById(R.id.btn_add_cancel); // 취소 버튼
 
         et_objectName = findViewById(R.id.et_objectName);
         et_objectLocation = findViewById(R.id.et_objectLocation);
         et_memo = findViewById(R.id.et_memo);
 
-        //추가하기 버튼이 클릭 되었을 때
+        //물건추가 버튼
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -161,6 +177,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 count++;
             }
         });
+
+        //현재위치 버튼
         geocoder = new Geocoder(this);
         btn_locationNow.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -181,7 +199,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
-        //추가 버튼 클릭
+        //자전거 버튼
+        btn_bike.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("자전거");
+            }
+        });
+        //롱 클릭 시 이름 따로 지정
+//        btn_bike.setOnLongClickListener(new View.OnLongClickListener(){
+//            @Override
+//            public  boolean onLongClick(View v){
+//
+//            }
+//        });
+        //책 버튼
+        btn_book.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("책");
+            }
+        });
+        //노트북 버튼
+        btn_labtop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("노트북");
+            }
+        });
+        //자동차 버튼
+        btn_car.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                et_objectName.setText("자동차");
+            }
+        });
+        //더보기 버튼
+//        btn_more.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                et_objectName.setText("미구현");
+//            }
+//        });
+        //확인 버튼
         btn_add_ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -195,7 +255,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Textlayout.setVisibility(View.INVISIBLE);
             }
         });
-        //취소 버튼 클릭
+        //취소 버튼
         btn_add_cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -272,7 +332,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                return infoWindow;
 //            }
 //        });
-
+        
         //유저에게 permission을 촉발시키기
         getLocationPermission();
 
@@ -323,7 +383,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     /**
      * 장소를 얻기위한 permission을 촉발함
      */
-    private void getLocationPermission() {
+    public void getLocationPermission() {
         /*
          * 현 위치를 알수 있도록 location permission을 요구
          * permission의 결과는 onRequestPermissionsResult(콜백) 에 의해 다뤄짐
