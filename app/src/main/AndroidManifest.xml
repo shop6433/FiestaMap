@@ -49,6 +49,11 @@
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
         </activity>
+        <activity
+            android:name=".InfoEnterActivity"
+            android:theme="@android:style/Theme.Translucent"
+            android:label="@string/title_activity_maps">
+        </activity>
     </application>
 
 </manifest>

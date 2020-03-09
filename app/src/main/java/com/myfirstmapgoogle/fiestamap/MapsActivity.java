@@ -2,8 +2,8 @@ package com.myfirstmapgoogle.fiestamap;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
@@ -14,7 +14,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -48,10 +47,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -100,12 +97,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private EditText et_memo;
     private Geocoder geocoder;
     File file;
+    public static final int REQUEST_CODE = 1001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mainactivity);
-        Textlayout = findViewById(R.id.Textlayout);
-        Textlayout.setVisibility(View.INVISIBLE);
 
 
         mContext = this;
@@ -133,13 +130,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         /**
          * 현재시간을 구하기
          * */
-        final TextView tv_dateNow; //현재 시간
-        long now = System.currentTimeMillis();    // 현재시간을 msec 으로 구한다.
-        Date date = new Date(now);    // 현재시간을 date 변수에 저장한다.
-        SimpleDateFormat sdfNow = new SimpleDateFormat("yyyy/MM/dd HH:mm");    // 시간을 나타냇 포맷을 정한다 ( yyyy/MM/dd 같은 형태로 변형 가능 )
-        String formatDate = sdfNow.format(date);     // nowDate 변수에 값을 저장한다.
-        tv_dateNow = (TextView) findViewById(R.id.tv_dateNow);
-        tv_dateNow.setText(formatDate);
 
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
         AList = new ArrayList();
@@ -157,126 +147,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         AList.add(btn_object4);
         AList.add(btn_object5);
         Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
-        Button btn_locationNow = findViewById(R.id.btn_locationNow); // 현재위치 버튼
 
-        Button btn_bike = findViewById(R.id.btn_bike);
-        Button btn_book = findViewById(R.id.btn_book);
-        Button btn_labtop = findViewById(R.id.btn_laptop);
-        Button btn_car = findViewById(R.id.btn_car);
-        String bike = "자전거";
-        String book = "책";
-        String labtop = "노트북";
-        String car = "차";
-
-        Button btn_add_ok = findViewById(R.id.btn_add_ok); // 확인 버튼
-        Button btn_add_cancel = findViewById(R.id.btn_add_cancel); // 취소 버튼
-
-        et_objectName = findViewById(R.id.et_objectName);
-        et_objectLocation = findViewById(R.id.et_objectLocation);
-        et_memo = findViewById(R.id.et_memo);
 
 
         //물건추가 버튼
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Textlayout.setVisibility(View.VISIBLE);
+                Intent intent = new Intent(MapsActivity.this, InfoEnterActivity.class);
+                intent.putExtra("Latitude", mLastKnownLocation.getLatitude());
+                intent.putExtra("Longitude", mLastKnownLocation.getLongitude());
+                startActivityForResult(intent,1);
                 Button button = (Button) AList.get(count);
                 button.setText(count + " 번째");
                 count++;
             }
         });
-
-        //현재위치 버튼
-        geocoder = new Geocoder(this);
-        btn_locationNow.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-                List<Address> list = null;
-                try{
-                    list = geocoder.getFromLocation(mLastKnownLocation.getLatitude(),mLastKnownLocation.getLongitude(),10);
-                }catch(IOException e){
-                    Log.e("test","주소변환 에러");
-                }
-                if(list!=null){
-                    if(list.size()==0){
-                        et_objectLocation.setHint("주소가 없음");
-                    }
-                    else {
-                        et_objectLocation.setText(list.get(0).getAddressLine(0).toString());
-                    }
-                }
-            }
-        });
-        //자전거 버튼
-        btn_bike.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                et_objectName.setText("자전거");
-            }
-        });
-        //롱 클릭 시 이름 따로 지정
-//        btn_bike.setOnLongClickListener(new View.OnLongClickListener(){
-//            @Override
-//            public  boolean onLongClick(View v){
-//
-//            }
-//        });
-        //책 버튼
-        btn_book.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                et_objectName.setText("책");
-            }
-        });
-        //노트북 버튼
-        btn_labtop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                et_objectName.setText("노트북");
-            }
-        });
-        //자동차 버튼
-        btn_car.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                et_objectName.setText("자동차");
-            }
-        });
-        //더보기 버튼
-//        btn_more.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                et_objectName.setText("미구현");
-//            }
-//        });
-        //확인 버튼
-        btn_add_ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = et_objectName.getText().toString();
-                String place = et_objectLocation.getText().toString();
-                String memo = et_memo.getText().toString();
-                String time = tv_dateNow.getText().toString();
-
-                myAddMarker(name, place, memo, time);
-                et_objectName.setText("");
-                et_objectLocation.setText("");
-                et_memo.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
-            }
-        });
-        //취소 버튼
-        btn_add_cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                et_objectName.setText("");
-                et_objectLocation.setText("");
-                et_memo.setText("");
-                Textlayout.setVisibility(View.INVISIBLE);
-            }
-        });
     }
+        @Override
+        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+            super.onActivityResult(requestCode, resultCode, data);
+            if(requestCode==1) {
+                if(resultCode==RESULT_OK) //
+                {
+                    String name = data.getStringExtra("name");
+                    String time = data.getStringExtra("time");
+                    String place = data.getStringExtra("place");
+                    String memo = data.getStringExtra("memo");
+                    myAddMarker(name,place, memo,time);
+                    Toast.makeText(MapsActivity.this,"good",Toast.LENGTH_LONG).show();
+            }
+                else Toast.makeText(MapsActivity.this,"bad",Toast.LENGTH_LONG).show();
+        }
+
+
+    }
+
+
     /**
      * 액티비티가 pause 되었을 때 상태 저장하기
      */
@@ -288,6 +195,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             super.onSaveInstanceState(outState);
         }
     }
+
     /**
      * 옵션매뉴 설정
      *
@@ -576,7 +484,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return mLocationPermissionGranted;
     }
 
-    private void myAddMarker(final String name, final String place, final String memo,final String time) {
+    public void myAddMarker(final String name, final String place, final String memo, final String time) {
         FileOutputStream fos = null;
         String myLatitude;
         String myLongitude;
@@ -584,22 +492,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Marker myMarker = mMap.addMarker(new MarkerOptions().
                     position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
                     .title(name)
-                    .snippet(time+"\n"+place +"\n" + memo));
+                    .snippet(time + "\n" + place + "\n" + memo));
             //좌표를 String 타입으로 변환
             myLatitude = Double.toString(mLastKnownLocation.getLatitude());
             myLongitude = Double.toString(mLastKnownLocation.getLongitude());
             try {
                 String a = "\r\n";
                 fos = openFileOutput("internal.txt", Context.MODE_APPEND);
-                fos.write(myLatitude.getBytes());fos.write(a.getBytes());
-                fos.write(myLongitude.getBytes());fos.write(a.getBytes());
-                fos.write(name.getBytes());fos.write(a.getBytes());
-                fos.write(place.getBytes());fos.write(a.getBytes());
-                fos.write(memo.getBytes());fos.write(a.getBytes());
-                fos.write(time.getBytes());fos.write(a.getBytes());
+                fos.write(myLatitude.getBytes());
+                fos.write(a.getBytes());
+                fos.write(myLongitude.getBytes());
+                fos.write(a.getBytes());
+                fos.write(name.getBytes());
+                fos.write(a.getBytes());
+                fos.write(place.getBytes());
+                fos.write(a.getBytes());
+                fos.write(memo.getBytes());
+                fos.write(a.getBytes());
+                fos.write(time.getBytes());
+                fos.write(a.getBytes());
                 fos.close();
                 //latitude, longitude, name, place, memo, time 순으로 저장, 줄바꿈으로 칸 나누기
-                Toast.makeText(MapsActivity.this,"저장완료",Toast.LENGTH_LONG).show();
+                Toast.makeText(MapsActivity.this, "저장완료", Toast.LENGTH_LONG).show();
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -607,15 +521,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 e.printStackTrace();
             }
             MarkerList.add(myMarker);
-        }
-        else Toast.makeText(MapsActivity.this,"위치를 알 수 없습니다.",Toast.LENGTH_LONG).show();
+        } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
     }
 
-    public void onInfoWindowClick(Marker marker){
+    public void onInfoWindowClick(Marker marker) {
         marker.showInfoWindow();
     }
 
-    public void loadMarker(){
+    public void loadMarker() {
         String data = null;
 //        StringBuffer Strbuffer = new StringBuffer();
         FileInputStream fis = null;
@@ -628,33 +541,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double Latitude;
         double Longitude;
         int i = 0;
-        try{
+        try {
             fis = openFileInput("internal.txt");
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
             data = bufferedReader.readLine();
-            while(data != null) {
-                if(i==0)myLatitude = data;
-                else if(i==1)myLongitude = data;
-                else if (i==2)name = data;
-                else if (i==3)place = data;
-                else if (i==4)memo = data;
-                else if (i==5)time = data;
+            while (data != null) {
+                if (i == 0) myLatitude = data;
+                else if (i == 1) myLongitude = data;
+                else if (i == 2) name = data;
+                else if (i == 3) place = data;
+                else if (i == 4) memo = data;
+                else if (i == 5) time = data;
                 i++;
-                if(i>5){
+                if (i > 5) {
                     Latitude = Double.parseDouble(myLatitude);
                     Longitude = Double.parseDouble(myLongitude);
                     Marker myMarker = mMap.addMarker(new MarkerOptions().
-                            position(new LatLng(Latitude,Longitude))
+                            position(new LatLng(Latitude, Longitude))
                             .title(name)
-                            .snippet(time+"\n"+place +"\n" + memo));
+                            .snippet(time + "\n" + place + "\n" + memo));
                     MarkerList.add(myMarker);
-                    i=0;
+                    i = 0;
                 }
-//                Strbuffer.append(data).append("/n");
                 data = bufferedReader.readLine();
             }
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
