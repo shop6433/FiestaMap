@@ -261,6 +261,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //디바이스의 현위치를 얻어서 맵에 띄움
         getDeviceLocation();
 
+        //커스텀 인포윈도우 설정
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivity.this);
+        map.setInfoWindowAdapter(adapter);
+
         //마커 불러오기
         loadMarker();
 
