@@ -11,7 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -53,48 +53,42 @@ import java.util.List;
  * 현재위치를 보여주는 액티비티
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnInfoWindowLongClickListener {
+        public static Context mContext;
 
-    public static Context mContext;
+        private static final String TAG = MapsActivity.class.getSimpleName();
+        private GoogleMap mMap;
+        private CameraPosition mCameraPosition;
 
-    private static final String TAG = MapsActivity.class.getSimpleName();
-    private GoogleMap mMap;
-    private CameraPosition mCameraPosition;
+        // The entry point to the Places API.
+        private PlacesClient mPlacesClient;
 
-    // The entry point to the Places API.
-    private PlacesClient mPlacesClient;
+        // The entry point to the Fused Location Provider.
+        private FusedLocationProviderClient mFusedLocationProviderClient;
 
-    // The entry point to the Fused Location Provider.
-    private FusedLocationProviderClient mFusedLocationProviderClient;
+        //한국(서울)으로 디폴트값 설정. 권한 부여 실패 및 거부시 서울로 지정됨.
+        private final LatLng mDefaultLocation = new LatLng(35.888, 128.65);
+        private static final int DEFAULT_ZOOM = 15;
+        private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+        private boolean mLocationPermissionGranted;
 
-    //한국(서울)으로 디폴트값 설정
-    // 권한 부여받지 못하면 서울로 ㄱㄱ
-    private final LatLng mDefaultLocation = new LatLng(35.888, 128.65);
-    private static final int DEFAULT_ZOOM = 15;
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private boolean mLocationPermissionGranted;
+        //Fused Location Provider에의해 마지막으로 얻어진 장소
+        private Location mLastKnownLocation;
 
-    //Fused Location Provider에의해 마지막으로 얻어진 장소
-    private Location mLastKnownLocation;
+        // 액티비티 상태를 알려주는 키
+        private static final String KEY_CAMERA_POSITION = "camera_position";
+        private static final String KEY_LOCATION = "location";
 
-    // 액티비티 상태를 알려주는 키
-    private static final String KEY_CAMERA_POSITION = "camera_position";
-    private static final String KEY_LOCATION = "location";
-
-    // 현재 장소를위해 사용된 것들
-    private static final int M_MAX_ENTRIES = 5;
-    private String[] mLikelyPlaceNames;
-    private String[] mLikelyPlaceAddresses;
-    private List[] mLikelyPlaceAttributions;
-    private LatLng[] mLikelyPlaceLatLngs;
-    private ArrayList AList;
-    private ArrayList<Marker> MarkerList;
-    int MarkCount;
-    LinearLayout Textlayout;
-    int count = 0;
-    int a;
-
-    File file;
-
+        // 현재 장소를위해 사용된 것들
+        private static final int M_MAX_ENTRIES = 5;
+        private String[] mLikelyPlaceNames;
+        private String[] mLikelyPlaceAddresses;
+        private List[] mLikelyPlaceAttributions;
+        private LatLng[] mLikelyPlaceLatLngs;
+        private ArrayList AList;
+        private ArrayList<Marker> MarkerList;
+        int MarkCount;
+        int count = 0;
+        int a;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,23 +114,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        // 화면에 띄우기
-
-        //날짜 출력
-        /**
-         * 현재시간을 구하기
-         * */
-
-        //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
-        AList = new ArrayList();
-        MarkerList = new ArrayList();
-
-        //추가된 물건 버튼
+        // 화면에 버튼 띄우기;
+        // 마커 생성시 표시되는 버튼
         Button btn_object1 = findViewById(R.id.btn_object1);
         Button btn_object2 = findViewById(R.id.btn_object2);
         Button btn_object3 = findViewById(R.id.btn_object3);
         Button btn_object4 = findViewById(R.id.btn_object4);
         Button btn_object5 = findViewById(R.id.btn_object5);
+        AList = new ArrayList();
+        MarkerList = new ArrayList();
         AList.add(btn_object1);
         AList.add(btn_object2);
         AList.add(btn_object3);
@@ -144,83 +130,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         AList.add(btn_object5);
         Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
 
-
-        //물건추가 버튼
+        //물건추가 버튼 클릭시,
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MapsActivity.this, InfoEnterActivity.class);
-                intent.putExtra("Latitude", mLastKnownLocation.getLatitude());
+                getDeviceLocation(); // 현재위치를 갱신
+                Intent intent = new Intent(MapsActivity.this, InfoEnterActivity.class); // 정보입력창 액티비티 호출
+                intent.putExtra("Latitude", mLastKnownLocation.getLatitude()); // 위도와 경도 값 전달
                 intent.putExtra("Longitude", mLastKnownLocation.getLongitude());
-                startActivityForResult(intent, 1);
+                startActivityForResult(intent, 1); // 종료시 코드 1로 종료
                 Button button = (Button) AList.get(count);
                 button.setText(count + " 번째");
                 count++;
             }
         });
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1) {//물건추가하기 버튼눌렀을 떄의 화면 전환
-            if (resultCode == RESULT_OK) //
-            {
-                String name = data.getStringExtra("name");
-                String time = data.getStringExtra("time");
-                String place = data.getStringExtra("place");
-                String memo = data.getStringExtra("memo");
-                myAddMarker(name, place, memo, time);
-                Toast.makeText(MapsActivity.this, "good", Toast.LENGTH_LONG).show();
-            } else Toast.makeText(MapsActivity.this, "bad", Toast.LENGTH_LONG).show();
-        }
-        else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환
-        if(resultCode == RESULT_CANCELED)
-            a = data.getIntExtra("ORDER",-1);
-        if(a>=0) delMarker(MarkerList.get(a));
-
-        }
-
-
-    }
-
-
-    /**
-     * 액티비티가 pause 되었을 때 상태 저장하기
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        if (mMap != null) {
-            outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
-            outState.putParcelable(KEY_LOCATION, mLastKnownLocation);
-            super.onSaveInstanceState(outState);
-        }
-    }
-
-    /**
-     * 옵션매뉴 설정
-     *
-     * @param menu The options menu.
-     * @return Boolean.
-     */
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.current_place_menu, menu);
-        return true;
-    }
-
-    /**
-     * 장소를 얻기위해 매뉴클릭 옵션 조정하기
-     *
-     * @param item The menu item to handle.
-     * @return Boolean.
-     */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.option_get_place) {
-            showCurrentPlace();
-        }
-        return true;
     }
 
     /**
@@ -244,12 +167,73 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getDeviceLocation();
 
         //커스텀 인포윈도우 설정
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(MapsActivity.this);
-        map.setInfoWindowAdapter(adapter);
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
 
+            @Override
+            // Return null here, so that getInfoContents() is called next.
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                // Inflate the layouts for the info window, title and snippet.
+                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
+
+                TextView title = ((TextView) infoWindow.findViewById(R.id.title));
+                title.setText(marker.getTitle());
+
+                TextView snippet = ((TextView) infoWindow.findViewById(R.id.snippet));
+                snippet.setText(marker.getSnippet());
+
+                return infoWindow;
+            }
+        });
         //마커 불러오기
         loadMarker();
 
+    }
+
+    /**
+     * 장소를 얻기위한 permission을 촉발함
+     */
+    public void getLocationPermission() {
+        /*
+         * 현 위치를 알수 있도록 location permission을 요구
+         * permission의 결과는 onRequestPermissionsResult(콜백) 에 의해 다뤄짐
+         */
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            mLocationPermissionGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+        }
+    }
+
+    /**
+     * Updates the map's UI settings based on whether the user has granted location permission.
+     * 유저가 permission 허가했는지에 따라 맵UI세팅 업데이트 하기
+     */
+    private void updateLocationUI() {
+        if (mMap == null) {
+            return;
+        }
+        try {
+            if (mLocationPermissionGranted) {
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
+            } else {
+                mMap.setMyLocationEnabled(false);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mLastKnownLocation = null;
+                getLocationPermission();
+            }
+        } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
+        }
     }
 
     /**
@@ -290,31 +274,63 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * 장소를 얻기위한 permission을 촉발함
+     * 액티비티 종료시 실행되는 매소드
+     * @param requestCode
+     * @param resultCode
+     * @param data
      */
-    public void getLocationPermission() {
-        /*
-         * 현 위치를 알수 있도록 location permission을 요구
-         * permission의 결과는 onRequestPermissionsResult(콜백) 에 의해 다뤄짐
-         */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) { // 정보입력창 액티비티 종료 시
+            if (resultCode == RESULT_OK)
+            {
+                String name = data.getStringExtra("name"); // 액티비티에서 전달 받은 값을 마커로 저장
+                String time = data.getStringExtra("time");
+                String place = data.getStringExtra("place");
+                String memo = data.getStringExtra("memo");
+                myAddMarker(name, place, memo, time);
+                Toast.makeText(MapsActivity.this, "good", Toast.LENGTH_LONG).show();
+            } else Toast.makeText(MapsActivity.this, "bad", Toast.LENGTH_LONG).show();
         }
+        else if (requestCode == 2) { // 인포윈도우 수정 팝업 액티비티 종료 시
+        if(resultCode == RESULT_CANCELED)
+            a = data.getIntExtra("ORDER",-1);
+        if(a>=0) delMarker(MarkerList.get(a)); // 확인버튼을 눌러 1이라는 값을 받아오면 삭제
+        }
+    }
+
+    /**
+     * 옵션매뉴 설정
+     *
+     * @param menu The options menu.
+     * @return Boolean.
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.current_place_menu, menu);
+        return true;
+    }
+
+    /**
+     * 장소를 얻기위해 매뉴클릭 옵션 조정하기
+     *
+     * @param item The menu item to handle.
+     * @return Boolean.
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.option_get_place) {
+            showCurrentPlace();
+        }
+        return true;
     }
 
     /**
      * location permission 요구 결과를 다룸
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         mLocationPermissionGranted = false;
         switch (requestCode) {
             case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
@@ -326,6 +342,176 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         updateLocationUI();
+    }
+
+    /**
+     * 마커 추가하기
+     * @param name
+     * @param place
+     * @param memo
+     * @param time
+     */
+    public void myAddMarker(final String name, final String place, final String memo, final String time) {
+        FileOutputStream fos = null;
+        String myLatitude;
+        String myLongitude;
+        if (mLastKnownLocation != null) {
+            MarkerList.add(mMap.addMarker(new MarkerOptions().
+                    position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
+                    .title(name)
+                    .snippet(time + "\n" + place + "\n" + memo)));
+            //좌표를 String 타입으로 변환
+            myLatitude = Double.toString(mLastKnownLocation.getLatitude());
+            myLongitude = Double.toString(mLastKnownLocation.getLongitude());
+            try {
+                String a = "\r\n";
+                fos = openFileOutput("internal.txt", Context.MODE_APPEND);
+                fos.write(myLatitude.getBytes());
+                fos.write(a.getBytes());
+                fos.write(myLongitude.getBytes());
+                fos.write(a.getBytes());
+                fos.write(name.getBytes());
+                fos.write(a.getBytes());
+                fos.write(place.getBytes());
+                fos.write(a.getBytes());
+                fos.write(memo.getBytes());
+                fos.write(a.getBytes());
+                fos.write(time.getBytes());
+                fos.write(a.getBytes());
+                fos.close();
+                //latitude, longitude, name, place, memo, time 순으로 저장, 줄바꿈으로 칸 나누기
+                Toast.makeText(MapsActivity.this, "저장완료", Toast.LENGTH_LONG).show();
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            MarkCount++;
+        } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
+    }
+
+    /**
+     * 기기 데이터에 저장된 마커 불러오기
+     */
+    public void loadMarker() {
+        String data = null;
+//        StringBuffer Strbuffer = new StringBuffer();
+        FileInputStream fis = null;
+        String myLatitude = "";
+        String myLongitude = "";
+        String name = "";
+        String place = "";
+        String memo = "";
+        String time = "";
+        double Latitude;
+        double Longitude;
+        int i = 0;
+        try {
+            fis = openFileInput("internal.txt");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
+            data = bufferedReader.readLine();
+            while (data != null) {
+                if (i == 0) myLatitude = data;
+                else if (i == 1) myLongitude = data;
+                else if (i == 2) name = data;
+                else if (i == 3) place = data;
+                else if (i == 4) memo = data;
+                else if (i == 5) time = data;
+                i++;
+                if (i > 5) {
+                    Latitude = Double.parseDouble(myLatitude);
+                    Longitude = Double.parseDouble(myLongitude);
+                    MarkerList.add(mMap.addMarker(new MarkerOptions().
+                            position(new LatLng(Latitude, Longitude))
+                            .title(name)
+                            .snippet(time + "\n" + place + "\n" + memo)));
+                    i = 0;
+                }
+                data = bufferedReader.readLine();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * 마커 삭제하기
+     * @param marker
+     */
+    public void delMarker(Marker marker) {
+        int i = 0;
+        while (MarkerList.get(i) != marker) {
+            i++;
+        }
+
+        MarkerList.get(i).remove();
+        File file = new File("/data/data/com.myfirstmapgoogle.fiestamap/files/internal.txt");
+        String dummy = "";
+        try {
+            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
+            String line;
+            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
+
+            for (int j = 0; j < i * 6; j++) {
+                line = bufferedReader.readLine();
+                dummy += (line + "\r\n");
+            }
+            for (int j = i * 6; j < (i + 1) * 6; j++) {
+                String deline = bufferedReader.readLine();
+            }
+            while ((line = bufferedReader.readLine()) != null) {
+                dummy += (line + "\r\n");
+            }
+            FileOutputStream fos = null;
+            fos = openFileOutput("internal.txt", Context.MODE_PRIVATE);
+            fos.write(dummy.getBytes());
+            fos.close();
+            bufferedReader.close();
+            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * infowindow 클릭시
+     * @param marker
+     */
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        marker.showInfoWindow();
+    }
+
+    /**
+     * infoWindow 롱 클릭 시
+     * @param marker
+     */
+    @Override
+    public void onInfoWindowLongClick(Marker marker) {
+        int i = 0;
+        while(!MarkerList.get(i).getId().equals(marker.getId())){
+            if(MarkerList.get(i)==null)break;
+            i++;
+        }
+        if(MarkerList.get(i)==null) Toast.makeText(this,"null",Toast.LENGTH_LONG).show();
+        else {
+            Intent intent = new Intent(MapsActivity.this, PopUpActivity.class);
+            intent.putExtra("ORDER", i);
+            startActivityForResult(intent, 2);
+        }
+
+
+    }
+
+    public boolean getpermission() {
+        return mLocationPermissionGranted;
     }
 
     /**
@@ -407,8 +593,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Displays a form allowing the user to select a place from a list of likely places.
      * 유저에게 likely place리스트에서 장소를 고르도록 폼을 전시(display)
+     * Displays a form allowing the user to select a place from a list of likely places.
      */
     private void openPlacesDialog() {
         //유저가 어디있는지 장소를 고르도록 묻기
@@ -444,173 +630,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Updates the map's UI settings based on whether the user has granted location permission.
-     * 유저가 permission 허가했는지에 따라 맵UI세팅 업데이트 하기
+     * 액티비티가 pause 되었을 때 상태 저장하기
      */
-    private void updateLocationUI() {
-        if (mMap == null) {
-            return;
-        }
-        try {
-            if (mLocationPermissionGranted) {
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setMyLocationButtonEnabled(true);
-            } else {
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                mLastKnownLocation = null;
-                getLocationPermission();
-            }
-        } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
-        }
-    }
-
-    public boolean getpermission() {
-        return mLocationPermissionGranted;
-    }
-
-    public void myAddMarker(final String name, final String place, final String memo, final String time) {
-        FileOutputStream fos = null;
-        String myLatitude;
-        String myLongitude;
-        if (mLastKnownLocation != null) {
-            MarkerList.add(mMap.addMarker(new MarkerOptions().
-                    position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
-                    .title(name)
-                    .snippet(time + "\n" + place + "\n" + memo)));
-            //좌표를 String 타입으로 변환
-            myLatitude = Double.toString(mLastKnownLocation.getLatitude());
-            myLongitude = Double.toString(mLastKnownLocation.getLongitude());
-            try {
-                String a = "\r\n";
-                fos = openFileOutput("internal.txt", Context.MODE_APPEND);
-                fos.write(myLatitude.getBytes());
-                fos.write(a.getBytes());
-                fos.write(myLongitude.getBytes());
-                fos.write(a.getBytes());
-                fos.write(name.getBytes());
-                fos.write(a.getBytes());
-                fos.write(place.getBytes());
-                fos.write(a.getBytes());
-                fos.write(memo.getBytes());
-                fos.write(a.getBytes());
-                fos.write(time.getBytes());
-                fos.write(a.getBytes());
-                fos.close();
-                //latitude, longitude, name, place, memo, time 순으로 저장, 줄바꿈으로 칸 나누기
-                Toast.makeText(MapsActivity.this, "저장완료", Toast.LENGTH_LONG).show();
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            MarkCount++;
-        } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
-    }
-
-    public void loadMarker() {
-        String data = null;
-//        StringBuffer Strbuffer = new StringBuffer();
-        FileInputStream fis = null;
-        String myLatitude = "";
-        String myLongitude = "";
-        String name = "";
-        String place = "";
-        String memo = "";
-        String time = "";
-        double Latitude;
-        double Longitude;
-        int i = 0;
-        try {
-            fis = openFileInput("internal.txt");
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
-            data = bufferedReader.readLine();
-            while (data != null) {
-                if (i == 0) myLatitude = data;
-                else if (i == 1) myLongitude = data;
-                else if (i == 2) name = data;
-                else if (i == 3) place = data;
-                else if (i == 4) memo = data;
-                else if (i == 5) time = data;
-                i++;
-                if (i > 5) {
-                    Latitude = Double.parseDouble(myLatitude);
-                    Longitude = Double.parseDouble(myLongitude);
-                    MarkerList.add(mMap.addMarker(new MarkerOptions().
-                            position(new LatLng(Latitude, Longitude))
-                            .title(name)
-                            .snippet(time + "\n" + place + "\n" + memo)));
-                    i = 0;
-                }
-                data = bufferedReader.readLine();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void delMarker(Marker marker) {
-        int i = 0;
-        while (MarkerList.get(i) != marker) {
-            i++;
-        }
-
-        MarkerList.get(i).remove();
-        File file = new File("/data/data/com.myfirstmapgoogle.fiestamap/files/internal.txt");
-        String dummy = "";
-        try {
-            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
-            String line;
-            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
-
-            for (int j = 0; j < i * 6; j++) {
-                line = bufferedReader.readLine();
-                dummy += (line + "\r\n");
-            }
-            for (int j = i * 6; j < (i + 1) * 6; j++) {
-                String deline = bufferedReader.readLine();
-            }
-            while ((line = bufferedReader.readLine()) != null) {
-                dummy += (line + "\r\n");
-            }
-            FileOutputStream fos = null;
-            fos = openFileOutput("internal.txt", Context.MODE_PRIVATE);
-            fos.write(dummy.getBytes());
-            fos.close();
-            bufferedReader.close();
-            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
-    public void onInfoWindowClick(Marker marker) {
-        marker.showInfoWindow();
-    }
-
-    @Override
-    public void onInfoWindowLongClick(Marker marker) {
-        int i = 0;
-        while(!MarkerList.get(i).getId().equals(marker.getId())){
-            if(MarkerList.get(i)==null)break;
-            i++;
+    protected void onSaveInstanceState(Bundle outState) {
+        if (mMap != null) {
+            outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
+            outState.putParcelable(KEY_LOCATION, mLastKnownLocation);
+            super.onSaveInstanceState(outState);
         }
-        if(MarkerList.get(i)==null) Toast.makeText(this,"null",Toast.LENGTH_LONG).show();
-        else {
-            Intent intent = new Intent(MapsActivity.this, PopUpActivity.class);
-            intent.putExtra("ORDER", i);
-            startActivityForResult(intent, 2);
-        }
-
-
     }
 }

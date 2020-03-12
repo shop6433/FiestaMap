@@ -54,15 +54,62 @@
                 android:layout_height="40dp"
                 android:layout_weight="2"
                 android:text="현재위치"/>
-
-
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
 
+            <Button
+                android:id="@+id/btn_bike"
+                android:layout_width="20dp"
+                android:layout_height="60dp"
+                android:background="@drawable/bike"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="10dp"
+                />
 
+            <Button
+                android:id="@+id/btn_book"
+                android:layout_width="20dp"
+                android:layout_height="60dp"
+                android:background="@drawable/book"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="10dp"
+                />
+
+            <Button
+                android:id="@+id/btn_laptop"
+                android:layout_width="20dp"
+                android:layout_height="60dp"
+                android:background="@drawable/laptop"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="10dp"
+                />
+
+            <Button
+                android:id="@+id/btn_car"
+                android:layout_width="20dp"
+                android:layout_height="60dp"
+                android:background="@drawable/drive"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="10dp"
+
+                />
+
+            <Button
+                android:id="@+id/btn_more"
+                android:layout_width="20dp"
+                android:layout_height="60dp"
+                android:background="@drawable/plus"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="10dp"
+                />
+        </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:layout_marginTop="10dp"
             android:orientation="horizontal">
 
             <TextView
@@ -136,61 +183,6 @@
                 android:textSize="16dp" />
 
         </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_bike"
-                android:layout_width="20dp"
-                android:layout_height="60dp"
-                android:background="@drawable/bike"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-                />
-
-            <Button
-                android:id="@+id/btn_book"
-                android:layout_width="20dp"
-                android:layout_height="60dp"
-                android:background="@drawable/book"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-                />
-
-            <Button
-                android:id="@+id/btn_laptop"
-                android:layout_width="20dp"
-                android:layout_height="60dp"
-                android:background="@drawable/laptop"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-                />
-
-            <Button
-                android:id="@+id/btn_car"
-                android:layout_width="20dp"
-                android:layout_height="60dp"
-                android:background="@drawable/drive"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-
-                />
-
-            <Button
-                android:id="@+id/btn_more"
-                android:layout_width="20dp"
-                android:layout_height="60dp"
-                android:background="@drawable/plus"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="10dp"
-                />
-
-        </LinearLayout>
-
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="42dp"
