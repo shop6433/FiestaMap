@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,7 +11,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -54,7 +52,7 @@ import java.util.List;
 /**
  * 현재위치를 보여주는 액티비티
  */
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnInfoWindowLongClickListener {
 
     public static Context mContext;
 
@@ -90,21 +88,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng[] mLikelyPlaceLatLngs;
     private ArrayList AList;
     private ArrayList<Marker> MarkerList;
+    int MarkCount;
     LinearLayout Textlayout;
     int count = 0;
-    private EditText et_objectName;
-    private EditText et_objectLocation;
-    private EditText et_memo;
-    private Geocoder geocoder;
+    int a;
+
     File file;
-    public static final int REQUEST_CODE = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mainactivity);
 
-
+        MarkCount = 0;
         mContext = this;
 
         //저장된 인스턴스 상태에 의해 얻어진 장소와 카메라 포지션
@@ -149,7 +145,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
 
 
-
         //물건추가 버튼
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,27 +152,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Intent intent = new Intent(MapsActivity.this, InfoEnterActivity.class);
                 intent.putExtra("Latitude", mLastKnownLocation.getLatitude());
                 intent.putExtra("Longitude", mLastKnownLocation.getLongitude());
-                startActivityForResult(intent,1);
+                startActivityForResult(intent, 1);
                 Button button = (Button) AList.get(count);
                 button.setText(count + " 번째");
                 count++;
             }
         });
     }
-        @Override
-        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-            super.onActivityResult(requestCode, resultCode, data);
-            if(requestCode==1) {
-                if(resultCode==RESULT_OK) //
-                {
-                    String name = data.getStringExtra("name");
-                    String time = data.getStringExtra("time");
-                    String place = data.getStringExtra("place");
-                    String memo = data.getStringExtra("memo");
-                    myAddMarker(name,place, memo,time);
-                    Toast.makeText(MapsActivity.this,"good",Toast.LENGTH_LONG).show();
-            }
-                else Toast.makeText(MapsActivity.this,"bad",Toast.LENGTH_LONG).show();
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {//물건추가하기 버튼눌렀을 떄의 화면 전환
+            if (resultCode == RESULT_OK) //
+            {
+                String name = data.getStringExtra("name");
+                String time = data.getStringExtra("time");
+                String place = data.getStringExtra("place");
+                String memo = data.getStringExtra("memo");
+                myAddMarker(name, place, memo, time);
+                Toast.makeText(MapsActivity.this, "good", Toast.LENGTH_LONG).show();
+            } else Toast.makeText(MapsActivity.this, "bad", Toast.LENGTH_LONG).show();
+        }
+        else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환
+        if(resultCode == RESULT_CANCELED)
+            a = data.getIntExtra("ORDER",-1);
+        if(a>=0) delMarker(MarkerList.get(a));
+
         }
 
 
@@ -229,28 +230,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
+        mMap.setOnInfoWindowClickListener(this);
+        mMap.setOnInfoWindowLongClickListener(this);
 
-        //info window contents의 다중 라인을 halndle하기 뒤한 커스텀 info window adapter
-//        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-//            @Override
-//            //여기서 null을 반환하면 getInfoContents()가 콜됨
-//            public View getInfoWindow(Marker arg0) {
-//                return null;
-//            }
-//            @Override
-//            public View getInfoContents(Marker marker) {
-//                //정보창 커스텀하기
-//                //말이 좀 어려운데 inflater가 흠... R.xxx파일 불러오는 거 같은거임
-//                View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, (FrameLayout) findViewById(R.id.map), false);
-//                TextView title = infoWindow.findViewById(R.id.title);
-//                title.setText(marker.getTitle());
-//
-//               TextView snippet = infoWindow.findViewById(R.id.snippet);
-//                snippet.setText(marker.getSnippet());
-//
-//                return infoWindow;
-//            }
-//        });
 
         //유저에게 permission을 촉발시키기
         getLocationPermission();
@@ -493,10 +475,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String myLatitude;
         String myLongitude;
         if (mLastKnownLocation != null) {
-            Marker myMarker = mMap.addMarker(new MarkerOptions().
+            MarkerList.add(mMap.addMarker(new MarkerOptions().
                     position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
                     .title(name)
-                    .snippet(time + "\n" + place + "\n" + memo));
+                    .snippet(time + "\n" + place + "\n" + memo)));
             //좌표를 String 타입으로 변환
             myLatitude = Double.toString(mLastKnownLocation.getLatitude());
             myLongitude = Double.toString(mLastKnownLocation.getLongitude());
@@ -524,12 +506,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            MarkerList.add(myMarker);
+            MarkCount++;
         } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
-    }
-
-    public void onInfoWindowClick(Marker marker) {
-        marker.showInfoWindow();
     }
 
     public void loadMarker() {
@@ -560,11 +538,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (i > 5) {
                     Latitude = Double.parseDouble(myLatitude);
                     Longitude = Double.parseDouble(myLongitude);
-                    Marker myMarker = mMap.addMarker(new MarkerOptions().
+                    MarkerList.add(mMap.addMarker(new MarkerOptions().
                             position(new LatLng(Latitude, Longitude))
                             .title(name)
-                            .snippet(time + "\n" + place + "\n" + memo));
-                    MarkerList.add(myMarker);
+                            .snippet(time + "\n" + place + "\n" + memo)));
                     i = 0;
                 }
                 data = bufferedReader.readLine();
@@ -574,6 +551,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+
+    public void delMarker(Marker marker) {
+        int i = 0;
+        while (MarkerList.get(i) != marker) {
+            i++;
+        }
+
+        MarkerList.get(i).remove();
+        File file = new File("/data/data/com.myfirstmapgoogle.fiestamap/files/internal.txt");
+        String dummy = "";
+        try {
+            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(new FileInputStream(file))));
+            String line;
+            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
+
+            for (int j = 0; j < i * 6; j++) {
+                line = bufferedReader.readLine();
+                dummy += (line + "\r\n");
+            }
+            for (int j = i * 6; j < (i + 1) * 6; j++) {
+                String deline = bufferedReader.readLine();
+            }
+            while ((line = bufferedReader.readLine()) != null) {
+                dummy += (line + "\r\n");
+            }
+            FileOutputStream fos = null;
+            fos = openFileOutput("internal.txt", Context.MODE_PRIVATE);
+            fos.write(dummy.getBytes());
+            fos.close();
+            bufferedReader.close();
+            Toast.makeText(this, "지웠다 "+MarkerList.get(i).getId(), Toast.LENGTH_SHORT).show();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        marker.showInfoWindow();
+    }
+
+    @Override
+    public void onInfoWindowLongClick(Marker marker) {
+        int i = 0;
+        while(!MarkerList.get(i).getId().equals(marker.getId())){
+            if(MarkerList.get(i)==null)break;
+            i++;
+        }
+        if(MarkerList.get(i)==null) Toast.makeText(this,"null",Toast.LENGTH_LONG).show();
+        else {
+            Intent intent = new Intent(MapsActivity.this, PopUpActivity.class);
+            intent.putExtra("ORDER", i);
+            startActivityForResult(intent, 2);
+        }
+
 
     }
 }

@@ -8,7 +8,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
 //마커의 정보창을 커스터마이징 해주는 클래스
 public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
-
+    Marker marker;
     private Activity context;
 
     public CustomInfoWindowAdapter(Activity context){
@@ -23,7 +23,7 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
     @Override
     public View getInfoContents(Marker marker) {
         View view = context.getLayoutInflater().inflate(R.layout.customwindow, null);
-
+        this.marker = marker;
         TextView tvTitle = (TextView) view.findViewById(R.id.tv_title);
         TextView tvSubTitle = (TextView) view.findViewById(R.id.tv_subtitle);
 

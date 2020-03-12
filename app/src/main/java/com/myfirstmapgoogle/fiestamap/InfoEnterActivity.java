@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ public class InfoEnterActivity extends Activity {
         final double Latitude;
         final double Longitude;
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.infoenteractivity);
 
         Button btn_bike = findViewById(R.id.btn_bike);
