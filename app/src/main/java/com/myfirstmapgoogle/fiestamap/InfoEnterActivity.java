@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,6 +36,12 @@ public class InfoEnterActivity extends Activity {
     private String book = "책";
     private String laptop = "노트북";
     private String car = "자동차";
+    private String phone = "휴대폰";
+    private String tablet = "태블릿";
+
+    private boolean isSelected = false;
+    Button [] buttonList = new Button[6];
+    boolean selectedButton[] = {false,false,false,false,false,false};
 
     protected void onCreate(Bundle savedInstanceState) {
         final double Latitude;
@@ -46,10 +53,12 @@ public class InfoEnterActivity extends Activity {
         loadData(); // 기기에 저장된 바로가기 값을 불러옴
 
         //정보입력창의 바로가기 버튼
-        Button btn_bike = findViewById(R.id.btn_bike);
-        Button btn_book = findViewById(R.id.btn_book);
-        Button btn_laptop = findViewById(R.id.btn_laptop);
-        Button btn_car = findViewById(R.id.btn_car);
+        buttonList[0] = findViewById(R.id.btn_bike);
+        buttonList[1] = findViewById(R.id.btn_book);
+        buttonList[2] = findViewById(R.id.btn_laptop);
+        buttonList[3] = findViewById(R.id.btn_car);
+        buttonList[4] = findViewById(R.id.btn_phone);
+        buttonList[5] = findViewById(R.id.btn_tablet);
 
         Button btn_locationNow = findViewById(R.id.btn_locationNow); // 현재위치 버튼
 
@@ -134,81 +143,114 @@ public class InfoEnterActivity extends Activity {
             }
         });
         //자전거 버튼 클릭
-        btn_bike.setOnClickListener(new View.OnClickListener() {
+        buttonList[0].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonSelect(0); // 버튼 선택이미지 및 상태 변경 메서드
                 et_objectName.setText(bike);
             }
         });
         // 자전거 버튼 롱 클릭
         // 이름 변경 가능
-        btn_bike.setOnLongClickListener(new View.OnLongClickListener(){
+        buttonList[0].setOnLongClickListener(new View.OnLongClickListener(){
             @Override
             public  boolean onLongClick(View v){
                 Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
                 intent.putExtra("data", bike); // data 이라는 이름으로 string 타입 bike를 넘겨줌
-                startActivityForResult(intent,1);
+                startActivityForResult(intent,0);
                 return true;  // true로 지정해줘야 onclick이 실행안됨.
             }
         });
         // 책 버튼 클릭
-        btn_book.setOnClickListener(new View.OnClickListener() {
+        buttonList[1].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonSelect(1);
                 et_objectName.setText(book);
             }
         });
         // 책 버튼 롱 클릭
-        btn_book.setOnLongClickListener(new View.OnLongClickListener(){
+        buttonList[1].setOnLongClickListener(new View.OnLongClickListener(){
             @Override
             public  boolean onLongClick(View v){
                 Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
                 intent.putExtra("data", book);
-                startActivityForResult(intent,2);
+                startActivityForResult(intent,1);
                 return true;
             }
         });
         // 노트북 버튼 클릭
-        btn_laptop.setOnClickListener(new View.OnClickListener() {
+        buttonList[2].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonSelect(2);
                 et_objectName.setText(laptop);
             }
         });
         // 노트북 버튼 롱 클릭
-        btn_laptop.setOnLongClickListener(new View.OnLongClickListener(){
+        buttonList[2].setOnLongClickListener(new View.OnLongClickListener(){
             @Override
             public  boolean onLongClick(View v){
                 Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
                 intent.putExtra("data", laptop);
-                startActivityForResult(intent,3);
+                startActivityForResult(intent,2);
                 return true;
             }
         });
         //자동차 버튼
-        btn_car.setOnClickListener(new View.OnClickListener() {
+        buttonList[3].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                buttonSelect(3);
                 et_objectName.setText(car);
             }
         });
         // 자동차 버튼 롱 클릭
-        btn_car.setOnLongClickListener(new View.OnLongClickListener(){
+        buttonList[3].setOnLongClickListener(new View.OnLongClickListener(){
             @Override
             public  boolean onLongClick(View v){
                 Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
                 intent.putExtra("data", car);
+                startActivityForResult(intent,3);
+                return true;
+            }
+        });
+        // 휴대폰 버튼
+        buttonList[4].setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                buttonSelect(4);
+                et_objectName.setText(phone);
+            }
+        });
+        // 휴대폰 버튼 롱 클릭
+        buttonList[4].setOnLongClickListener(new View.OnLongClickListener(){
+            @Override
+            public  boolean onLongClick(View v){
+                Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
+                intent.putExtra("data", phone);
                 startActivityForResult(intent,4);
                 return true;
             }
         });
-        //더보기 버튼
-//        btn_more.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                et_objectName.setText("미구현");
-//            }
-//        });
+        // 태블릿 버튼
+        buttonList[5].setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                buttonSelect(5);
+                et_objectName.setText(tablet);
+            }
+        });
+        // 태블릿 버튼 롱 클릭
+        buttonList[5].setOnLongClickListener(new View.OnLongClickListener(){
+            @Override
+            public  boolean onLongClick(View v){
+                Intent intent = new Intent(InfoEnterActivity.this, EditObjectName.class);
+                intent.putExtra("data", tablet);
+                startActivityForResult(intent,5);
+                return true;
+            }
+        });
 
     }
 
@@ -221,7 +263,7 @@ public class InfoEnterActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // 아이콘 이름변경 팝업 종료시
-        if(requestCode==1){ // 자전거
+        if(requestCode==0){ // 자전거
             if(resultCode==RESULT_OK){
                 //데이터 받기
                 String result = data.getStringExtra("result");
@@ -229,7 +271,7 @@ public class InfoEnterActivity extends Activity {
                 et_objectName.setText(bike);
             }
         }
-        else if(requestCode==2){ // 책
+        else if(requestCode==1){ // 책
             if(resultCode==RESULT_OK){
                 //데이터 받기
                 String result = data.getStringExtra("result");
@@ -237,7 +279,7 @@ public class InfoEnterActivity extends Activity {
                 et_objectName.setText(book);
             }
         }
-        else if(requestCode==3){ // 노트북
+        else if(requestCode==2){ // 노트북
             if(resultCode==RESULT_OK){
                 //데이터 받기
                 String result = data.getStringExtra("result");
@@ -245,7 +287,7 @@ public class InfoEnterActivity extends Activity {
                 et_objectName.setText(laptop);
             }
         }
-        else if(requestCode==4){ // 자동차
+        else if(requestCode==3){ // 자동차
             if(resultCode==RESULT_OK){
                 //데이터 받기
                 String result = data.getStringExtra("result");
@@ -253,7 +295,21 @@ public class InfoEnterActivity extends Activity {
                 et_objectName.setText(car);
             }
         }
-        else{
+        else if(requestCode==4){ // 휴대폰
+            if(resultCode==RESULT_OK){
+                //데이터 받기
+                String result = data.getStringExtra("result");
+                phone = result;
+                et_objectName.setText(phone);
+            }
+        }
+        else if(requestCode==5){ // 태블릿
+            if(resultCode==RESULT_OK){
+                //데이터 받기
+                String result = data.getStringExtra("result");
+                tablet = result;
+                et_objectName.setText(tablet);
+            }
         }
         //데이터 받은 후 저장
         FileOutputStream fos = null;
@@ -267,6 +323,10 @@ public class InfoEnterActivity extends Activity {
             fos.write(laptop.getBytes());
             fos.write(a.getBytes());
             fos.write(car.getBytes());
+            fos.write(a.getBytes());
+            fos.write(phone.getBytes());
+            fos.write(a.getBytes());
+            fos.write(tablet.getBytes());
             fos.write(a.getBytes());
             fos.close();
             Toast.makeText(InfoEnterActivity.this, "저장완료", Toast.LENGTH_LONG).show();
@@ -310,6 +370,28 @@ public class InfoEnterActivity extends Activity {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void buttonSelect(int index){
+        if(selectedButton[index] == false && isSelected == false) { // 아무 버튼이 눌리지 않은 상태라면
+            buttonList[index].setSelected(true); // 눌린 버튼을 선택된 상태로 변경
+            selectedButton[index] = true;
+            isSelected = true;
+        }
+        else if(selectedButton[index] == false && isSelected == true){ // 누른 버튼은 선택되어 있지 않으나 다른 버튼이 눌려 있다면
+            for(int i = 0 ; i <= 5 ; i++){
+                buttonList[i].setSelected(false); // 모든 버튼을 선택되지 않은 상태로 변경
+                selectedButton[i] = false;
+            }
+            buttonList[index].setSelected(true); // 누른 버튼을 선택된 상태로 변경
+            selectedButton[index]= true;
+            isSelected = true;
+        }
+        else if(selectedButton[index]== true && isSelected == true) { // 누른 버튼이 이미 선택된 버튼이라면
+            buttonList[index].setSelected(false); // 선택되지 않은 상태로 변경
+            selectedButton[index] = false;
+            isSelected = false;
         }
     }
 
