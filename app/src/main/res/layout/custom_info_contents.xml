@@ -4,10 +4,17 @@
     android:layout_height="wrap_content"
     android:layoutDirection="locale"
     android:orientation="vertical">
-
-    <Button
-        android:id="@+id/button11"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Button" />
+        android:layout_gravity="center_horizontal"
+        android:textColor="#ff000000"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/snippet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#ff7f7f7f" />
 </LinearLayout>
