@@ -55,6 +55,12 @@
                 android:layout_weight="2"
                 android:text="현재위치"/>
         </LinearLayout>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            >
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="80dp"
@@ -63,50 +69,53 @@
 
             <Button
                 android:id="@+id/btn_bike"
-                android:layout_width="20dp"
+                android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/bike"
-                android:layout_weight="1"
                 android:layout_marginHorizontal="10dp"
-                />
+                android:background="@drawable/bike_selector" />
 
             <Button
                 android:id="@+id/btn_book"
-                android:layout_width="20dp"
+                android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/book"
-                android:layout_weight="1"
+                android:background="@drawable/book_selector"
                 android:layout_marginHorizontal="10dp"
                 />
 
             <Button
                 android:id="@+id/btn_laptop"
-                android:layout_width="20dp"
+                android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/laptop"
-                android:layout_weight="1"
+                android:background="@drawable/laptop_selector"
                 android:layout_marginHorizontal="10dp"
                 />
 
             <Button
                 android:id="@+id/btn_car"
-                android:layout_width="20dp"
+                android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/drive"
-                android:layout_weight="1"
+                android:background="@drawable/car_selector"
                 android:layout_marginHorizontal="10dp"
 
                 />
 
             <Button
-                android:id="@+id/btn_more"
-                android:layout_width="20dp"
+                android:id="@+id/btn_phone"
+                android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/plus"
-                android:layout_weight="1"
+                android:background="@drawable/phone_selector"
+                android:layout_marginHorizontal="10dp"
+                />
+            <Button
+                android:id="@+id/btn_tablet"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/tablet_selector"
                 android:layout_marginHorizontal="10dp"
                 />
         </LinearLayout>
+
+        </HorizontalScrollView>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--버튼이 클릭 되었을 때 이미지를 바꿔주는 xml파일-->
+    <item
+    android:state_selected="false"
+    android:drawable="@drawable/tablet">
+    </item>
+    <item
+    android:state_selected="true"
+    android:drawable="@drawable/tablet_pressed">
+    </item>
+</selector>
