@@ -54,6 +54,15 @@ import java.util.List;
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnInfoWindowLongClickListener {
 
+    class ButtonMarker{
+        Button button;
+        Marker marker;
+        public ButtonMarker(Button button,Marker marker){
+        this.button = button;
+        this.marker=marker;
+        }
+    }
+
     public static Context mContext;
 
     private static final String TAG = MapsActivity.class.getSimpleName();
@@ -88,12 +97,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng[] mLikelyPlaceLatLngs;
     private ArrayList AList;
     private ArrayList<Marker> MarkerList;
+    private ArrayList<ButtonMarker> ButtonMarkerList;
     int MarkCount;
-    LinearLayout Textlayout;
-    int count = 0;
+    int count=0;
     int a;
+    private LinearLayout Right_btn_layout ;
+    private LinearLayout Center_btn_layout;
+    private LinearLayout Left_btn_layout;
 
-    File file;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,20 +139,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
          * */
 
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
-        AList = new ArrayList();
         MarkerList = new ArrayList();
+        ButtonMarkerList = new ArrayList();
 
         //추가된 물건 버튼
-        Button btn_object1 = findViewById(R.id.btn_object1);
-        Button btn_object2 = findViewById(R.id.btn_object2);
-        Button btn_object3 = findViewById(R.id.btn_object3);
-        Button btn_object4 = findViewById(R.id.btn_object4);
-        Button btn_object5 = findViewById(R.id.btn_object5);
-        AList.add(btn_object1);
-        AList.add(btn_object2);
-        AList.add(btn_object3);
-        AList.add(btn_object4);
-        AList.add(btn_object5);
+
         Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
 
 
@@ -153,9 +155,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 intent.putExtra("Latitude", mLastKnownLocation.getLatitude());
                 intent.putExtra("Longitude", mLastKnownLocation.getLongitude());
                 startActivityForResult(intent, 1);
-                Button button = (Button) AList.get(count);
-                button.setText(count + " 번째");
-                count++;
             }
         });
     }
@@ -171,10 +170,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String place = data.getStringExtra("place");
                 String memo = data.getStringExtra("memo");
                 myAddMarker(name, place, memo, time);
+                 Right_btn_layout = findViewById(R.id.Right_btn_layout);
+                 Center_btn_layout = findViewById(R.id.Center_btn_layout);
+                 Left_btn_layout = findViewById(R.id.Left_btn_layout);
+                 Button temptBtn = new Button(this);
+                 temptBtn.setText(name);
+                temptBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150));
+                if(count==0)Left_btn_layout.addView(temptBtn);
+                else if(count == 1) Center_btn_layout.addView(temptBtn);
+                else Right_btn_layout.addView(temptBtn);
+                count ++;
+                if(count>2)count = 0;
+
                 Toast.makeText(MapsActivity.this, "good", Toast.LENGTH_LONG).show();
             } else Toast.makeText(MapsActivity.this, "bad", Toast.LENGTH_LONG).show();
         }
-        else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환
+        else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환(정보화면 롱클릭)
         if(resultCode == RESULT_CANCELED)
             a = data.getIntExtra("ORDER",-1);
         if(a>=0) delMarker(MarkerList.get(a));
