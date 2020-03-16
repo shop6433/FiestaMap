@@ -22,13 +22,17 @@ public class PopUpActivity extends Activity {
         adjust.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.putExtra("ORDER",num);
+                setResult(RESULT_OK,intent);
+                finish();
+
             }
         });
         del.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
-                intent.putExtra("DELETE",1);
                 intent.putExtra("ORDER",num);
                 setResult(RESULT_CANCELED,intent);
                 finish();
@@ -54,6 +58,9 @@ public class PopUpActivity extends Activity {
      */
     @Override
     public void onBackPressed() {
+        Intent intent = new Intent();
+        setResult(1,intent);
+        finish();
         return;
     }
 

@@ -52,33 +52,34 @@ import java.util.List;
 /**
  * 현재위치를 보여주는 액티비티
  */
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnInfoWindowLongClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
+        GoogleMap.OnInfoWindowLongClickListener,Button.OnClickListener,Button.OnLongClickListener {
 
 
     public static Context mContext;
 
-        private static final String TAG = MapsActivity.class.getSimpleName();
-        private GoogleMap mMap;
-        private CameraPosition mCameraPosition;
+    private static final String TAG = MapsActivity.class.getSimpleName();
+    private GoogleMap mMap;
+    private CameraPosition mCameraPosition;
 
-        // The entry point to the Places API.
-        private PlacesClient mPlacesClient;
+    // The entry point to the Places API.
+    private PlacesClient mPlacesClient;
 
-        // The entry point to the Fused Location Provider.
-        private FusedLocationProviderClient mFusedLocationProviderClient;
+    // The entry point to the Fused Location Provider.
+    private FusedLocationProviderClient mFusedLocationProviderClient;
 
-        //한국(서울)으로 디폴트값 설정. 권한 부여 실패 및 거부시 서울로 지정됨.
-        private final LatLng mDefaultLocation = new LatLng(35.888, 128.65);
-        private static final int DEFAULT_ZOOM = 15;
-        private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-        private boolean mLocationPermissionGranted;
+    //한국(서울)으로 디폴트값 설정. 권한 부여 실패 및 거부시 서울로 지정됨.
+    private final LatLng mDefaultLocation = new LatLng(35.888, 128.65);
+    private static final int DEFAULT_ZOOM = 15;
+    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private boolean mLocationPermissionGranted;
 
-        //Fused Location Provider에의해 마지막으로 얻어진 장소
-        private Location mLastKnownLocation;
+    //Fused Location Provider에의해 마지막으로 얻어진 장소
+    private Location mLastKnownLocation;
 
-        // 액티비티 상태를 알려주는 키
-        private static final String KEY_CAMERA_POSITION = "camera_position";
-        private static final String KEY_LOCATION = "location";
+    // 액티비티 상태를 알려주는 키
+    private static final String KEY_CAMERA_POSITION = "camera_position";
+    private static final String KEY_LOCATION = "location";
 
     // 현재 장소를위해 사용된 것들
     private static final int M_MAX_ENTRIES = 5;
@@ -89,12 +90,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LinkedList<Marker> MarkerList;
     private LinkedList<Button> ButtonList;
     int MarkBtnCount;
-    int count=0;
+    int count = 0;
     int a;
-    private LinearLayout Right_btn_layout ;
+    private LinearLayout Right_btn_layout;
     private LinearLayout Center_btn_layout;
     private LinearLayout Left_btn_layout;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,14 +166,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
         else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환
-            if (resultCode == RESULT_CANCELED)
+            //수정하기 버튼
+            if(resultCode==RESULT_OK){
+                a = data.getIntExtra("ORDER",-1);
+                String name = MarkerList.get(a).getTitle();
+                String time = data.getStringExtra("time");
+                String place = data.getStringExtra("place");
+                String memo = data.getStringExtra("memo");
+            }
+            //삭제하기 버튼
+            if (resultCode == RESULT_CANCELED) {
                 a = data.getIntExtra("ORDER", -1);
 //            Toast.makeText(MapsActivity.this,""+a,Toast.LENGTH_SHORT).show();
-            if (a >= 0) {
-                delMarker(a);
-                delButton(a);
+                if (a >= 0) {
+                    delMarker(a);
+                    delButton(a);
+                }
             }
+            //뒤로가기 버튼
+            if (resultCode == 1) { }
         }
+
     }
 
 
@@ -258,9 +271,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 //        //마커 불러오기
 
-            loadMarker();
-            loadButton();
-        }
+        loadMarker();
+        loadButton();
+    }
 
 
     /**
@@ -443,7 +456,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * 마커 추가하기
-
      */
     private void openPlacesDialog() {
         //유저가 어디있는지 장소를 고르도록 묻기
@@ -492,7 +504,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         FileOutputStream fos;
         String myLatitude;
         String myLongitude;
-        if(name==null&&place==null&&memo==null&&time==null)return ;
+        if (name == null && place == null && memo == null && time == null) return;
         //종료 시 까지 의 마커 찍기위함
         if (mLastKnownLocation != null) {
             MarkerList.add(mMap.addMarker(new MarkerOptions().
@@ -529,7 +541,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
     }
-    public void myAddButton(final String name){
+
+    public void myAddButton(final String name) {
         //종료 시 까지 버튼 만들기
         Right_btn_layout = findViewById(R.id.Right_btn_layout);
         Center_btn_layout = findViewById(R.id.Center_btn_layout);
@@ -537,19 +550,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Button temptBtn = new Button(this);
         temptBtn.setText(name);
         temptBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150));
-        temptBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            }
-        });
         //버튼은 저장은 따로하지않고, marker의 name값만 가져옴
         //먼저 myAddMarker호출 되므로 1부터 시작
-        if(MarkBtnCount%3==1)Left_btn_layout.addView(temptBtn);
-        else if(MarkBtnCount%3 == 2) Center_btn_layout.addView(temptBtn);
+        if (MarkBtnCount % 3 == 1) Left_btn_layout.addView(temptBtn);
+        else if (MarkBtnCount % 3 == 2) Center_btn_layout.addView(temptBtn);
         else Right_btn_layout.addView(temptBtn);
         ButtonList.add(temptBtn);
+        temptBtn.setOnClickListener(this);
+        temptBtn.setOnLongClickListener(this);
+
 //        Toast.makeText(MapsActivity.this, "저장완료"+MarkerList.size()+" "+ButtonList.size(), Toast.LENGTH_SHORT).show();
     }
+
     /**
      * 기기 데이터에 저장된 마커, 버튼 불러오기
      */
@@ -559,33 +571,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String data;
 //        StringBuffer Strbuffer = new StringBuffer();
         FileInputStream fis;
-        String myLatitude = "";String myLongitude = "";
-        String name = "";String place = "";
-        String memo = "";String time = "";
-        double Latitude; double Longitude;
+        String myLatitude = "";
+        String myLongitude = "";
+        String name = "";
+        String place = "";
+        String memo = "";
+        String time = "";
+        double Latitude;
+        double Longitude;
         int i = 0;
         try {
             fis = openFileInput("internal.txt");
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fis));
             data = bufferedReader.readLine();
-        while (data != null) {
-            if (i == 0) myLatitude = data;
-            else if (i == 1) myLongitude = data;
-            else if (i == 2) name = data;
-            else if (i == 3) place = data;
-            else if (i == 4) memo = data;
-            else if (i == 5) time = data;
-            i++;
-            if (i > 5) {
-                Latitude = Double.parseDouble(myLatitude);
-                Longitude = Double.parseDouble(myLongitude);
-                MarkerList.add(mMap.addMarker(new MarkerOptions().
-                        position(new LatLng(Latitude, Longitude))
-                        .title(name)
-                        .snippet(time + "\n" + place + "\n" + memo)));
-                MarkBtnCount++;
-                i = 0;
-            }
+            while (data != null) {
+                if (i == 0) myLatitude = data;
+                else if (i == 1) myLongitude = data;
+                else if (i == 2) name = data;
+                else if (i == 3) place = data;
+                else if (i == 4) memo = data;
+                else if (i == 5) time = data;
+                i++;
+                if (i > 5) {
+                    Latitude = Double.parseDouble(myLatitude);
+                    Longitude = Double.parseDouble(myLongitude);
+                    MarkerList.add(mMap.addMarker(new MarkerOptions().
+                            position(new LatLng(Latitude, Longitude))
+                            .title(name)
+                            .snippet(time + "\n" + place + "\n" + memo)));
+                    MarkBtnCount++;
+                    i = 0;
+                }
                 data = bufferedReader.readLine();
 
             }
@@ -595,6 +611,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
     }
+
     public void loadButton() {
         Right_btn_layout = findViewById(R.id.Right_btn_layout);
         Center_btn_layout = findViewById(R.id.Center_btn_layout);
@@ -622,6 +639,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     else if (j % 3 == 1) Center_btn_layout.addView(temptBtn);
                     else Right_btn_layout.addView(temptBtn);
                     ButtonList.add(temptBtn);
+                    temptBtn.setOnClickListener(this);
+                    temptBtn.setOnLongClickListener(this);
+
                     j++;
                 }
                 i++;
@@ -667,20 +687,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
     }
+
     public void delButton(int i) {
         //버튼 찾아서 지우고
         ButtonList.get(i).setVisibility(View.GONE);
         ButtonList.remove(i);
 
-        int j=0;
+        int j = 0;
         Left_btn_layout.removeAllViews();
         Right_btn_layout.removeAllViews();
         Center_btn_layout.removeAllViews();
-        for(i=0;i<MarkBtnCount;i++){
+        for (i = 0; i < MarkBtnCount; i++) {
             Button temptBtn = ButtonList.get(i);
             temptBtn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 150));
-            if(j%3==0)Left_btn_layout.addView(temptBtn);
-            else if(j%3 == 1) Center_btn_layout.addView(temptBtn);
+            if (j % 3 == 0) Left_btn_layout.addView(temptBtn);
+            else if (j % 3 == 1) Center_btn_layout.addView(temptBtn);
             else Right_btn_layout.addView(temptBtn);
             j++;
         }
@@ -691,6 +712,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * infowindow 클릭시
+     *
      * @param marker
      */
     @Override
@@ -700,22 +722,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     /**
      * infoWindow 롱 클릭 시
+     *
      * @param marker
      */
     @Override
     public void onInfoWindowLongClick(Marker marker) {
         int i = 0;
-        while(!MarkerList.get(i).getId().equals(marker.getId())){
-            if(MarkerList.get(i)==null)break;
+        while (!MarkerList.get(i).getId().equals(marker.getId())) {
+            if (MarkerList.get(i) == null) break;
             i++;
         }
-        if(MarkerList.get(i)==null) Toast.makeText(this,"null",Toast.LENGTH_LONG).show();
-        else {
             Intent intent = new Intent(MapsActivity.this, PopUpActivity.class);
             intent.putExtra("ORDER", i);
             startActivityForResult(intent, 2);
+
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        int i = 0;
+        while (ButtonList.get(i) != v) {
+            if (ButtonList.get(i) == null) break;
+            i++;
         }
+        MarkerList.get(i).showInfoWindow();
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                new LatLng(MarkerList.get(i).getPosition().latitude,
+                        MarkerList.get(i).getPosition().longitude), DEFAULT_ZOOM));
 
+    }
 
+    @Override
+    public boolean onLongClick(View v) {
+        int i = 0;
+        while (ButtonList.get(i) != v) {
+            if (ButtonList.get(i) == null) break;
+            i++;
+        }
+            Intent intent = new Intent(MapsActivity.this, PopUpActivity.class);
+            intent.putExtra("ORDER", i);
+            startActivityForResult(intent, 2);
+            return true;
     }
 }
