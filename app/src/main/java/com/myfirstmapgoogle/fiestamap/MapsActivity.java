@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -152,27 +151,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1) {//물건추가하기 버튼눌렀을 떄의 화면 전환
+        if (requestCode == 1) {//물건추가하기 -> InfoEnterActivity 화면에서 넘어온 정보
             if (resultCode == RESULT_OK) //
             {
                 String name = data.getStringExtra("name");
                 String time = data.getStringExtra("time");
                 String place = data.getStringExtra("place");
                 String memo = data.getStringExtra("memo");
-                myAddMarker(name, place, memo, time);
+                double Longitude = data.getDoubleExtra("Longitude",-1);
+                double Latitude = data.getDoubleExtra("Latitude",-1);
+                myAddMarker(Latitude,Longitude,name, place, memo, time);
                 myAddButton(name);
 
-                Toast.makeText(MapsActivity.this, "good", Toast.LENGTH_SHORT).show();
             }
         }
-        else if (requestCode == 2) {//인포윈도우 롱 클릭 시의 화면 전환
+        else if (requestCode == 2) {//인포윈도우 롱 클릭 -> PopUpActivity 화면에서 넘어온 정보
             //수정하기 버튼
             if(resultCode==RESULT_OK){
                 a = data.getIntExtra("ORDER",-1);
-                String name = MarkerList.get(a).getTitle();
-                String time = data.getStringExtra("time");
-                String place = data.getStringExtra("place");
-                String memo = data.getStringExtra("memo");
+                setAdjustMarker(a);
+
             }
             //삭제하기 버튼
             if (resultCode == RESULT_CANCELED) {
@@ -186,8 +184,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //뒤로가기 버튼
             if (resultCode == 1) { }
         }
+        else if (requestCode == 3){  //수정하기버튼을 눌러서 InfoEnterActivity 화면으로 넘어갔다가 온 정보
+            String name = data.getStringExtra("name");
+            String place = data.getStringExtra("place");
+            String time = data.getStringExtra("time");
+            String memo = data.getStringExtra("memo");
+            double Latitude = data.getDoubleExtra("Latitude",-1);
+            double Longitude = data.getDoubleExtra("Longitude",-1);
+            int order = data.getIntExtra("order",-1);
+            adjustMarker(Latitude,Longitude,name, place, memo, time,order);
+            adjustButton(name,order);
+
+        }
 
     }
+
 
 
     /**
@@ -500,20 +511,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    public void myAddMarker(final String name, final String place, final String memo, final String time) {
+    private void myAddMarker(double Latitude,double Longitude, final String name, final String place, final String memo, final String time) {
         FileOutputStream fos;
         String myLatitude;
         String myLongitude;
         if (name == null && place == null && memo == null && time == null) return;
         //종료 시 까지 의 마커 찍기위함
-        if (mLastKnownLocation != null) {
+
             MarkerList.add(mMap.addMarker(new MarkerOptions().
-                    position(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()))
+                    position(new LatLng(Latitude,Longitude))
                     .title(name)
                     .snippet(time + "\n" + place + "\n" + memo)));
             //좌표를 String 타입으로 변환
-            myLatitude = Double.toString(mLastKnownLocation.getLatitude());
-            myLongitude = Double.toString(mLastKnownLocation.getLongitude());
+            myLatitude = Double.toString(Latitude);
+            myLongitude = Double.toString(Longitude);
             MarkBtnCount++;
             //종료후에도 저장하기 위함
             try {
@@ -539,10 +550,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else Toast.makeText(MapsActivity.this, "위치를 알 수 없습니다.", Toast.LENGTH_LONG).show();
     }
-
-    public void myAddButton(final String name) {
+    private void myAddButton(final String name) {
         //종료 시 까지 버튼 만들기
         Right_btn_layout = findViewById(R.id.Right_btn_layout);
         Center_btn_layout = findViewById(R.id.Center_btn_layout);
@@ -562,12 +571,63 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        Toast.makeText(MapsActivity.this, "저장완료"+MarkerList.size()+" "+ButtonList.size(), Toast.LENGTH_SHORT).show();
     }
 
+    private void adjustMarker(double Latitude, double Longitude, final String name, final String place, final String memo, final String time,int order) {
+        FileOutputStream fos;
+        String myLatitude;
+        String myLongitude;
+        if (name == null && place == null && memo == null && time == null) return;
+        //종료 시 까지 의 마커 찍기위함
+        MarkerList.get(order).remove();
+        MarkerList.remove(order);
+        FileInputStream fis;
+        String dummy = "";
+        String a = "\r\n";
+        //지우고 다시 order번째에 넣기
+        MarkerList.add(order, mMap.addMarker(new MarkerOptions().
+                position(new LatLng(Latitude, Longitude))
+                .title(name)
+                .snippet(time + "\n" + place + "\n" + memo)));
+        //좌표를 String 타입으로 변환
+        myLatitude = Double.toString(Latitude);
+        myLongitude = Double.toString(Longitude);
+        //종료후에도 저장하기 위함
+        try {
+            fis = openFileInput("internal.txt");
+            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(fis)));
+            String line;
+            //dummy에 한줄씩 기존 데이터를 저장하다가
+            for (int j = 0; j < order * 6; j++) {
+                line = bufferedReader.readLine();
+                dummy += (line + a);
+            }
+            //삭제된 곳이오면 버리는 곳에 저장
+            for (int j = order * 6; j < (order + 1) * 6; j++) {
+                String deline = bufferedReader.readLine();
+            }
+            //후에 다시 저장
+            dummy += (myLatitude + a + myLongitude + a + name + a + place + a + memo +a+ time + a);
+            while ((line = bufferedReader.readLine()) != null) {
+                dummy += (line + a);
+            }
+            fos = openFileOutput("internal.txt", Context.MODE_PRIVATE);
+            fos.write(dummy.getBytes());
+            fos.close();
+            bufferedReader.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private void adjustButton(String name,int order){
+        ButtonList.get(order).setText(name);
+    }
     /**
      * 기기 데이터에 저장된 마커, 버튼 불러오기
      */
 
 
-    public void loadMarker() {
+    private void loadMarker() {
         String data;
 //        StringBuffer Strbuffer = new StringBuffer();
         FileInputStream fis;
@@ -611,8 +671,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
     }
-
-    public void loadButton() {
+    private void loadButton() {
         Right_btn_layout = findViewById(R.id.Right_btn_layout);
         Center_btn_layout = findViewById(R.id.Center_btn_layout);
         Left_btn_layout = findViewById(R.id.Left_btn_layout);
@@ -656,7 +715,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    public void delMarker(int i) {
+    private void delMarker(int i) {
         MarkerList.get(i).remove();
         MarkerList.remove(i);
         FileInputStream fis;
@@ -687,8 +746,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
     }
-
-    public void delButton(int i) {
+    private void delButton(int i) {
         //버튼 찾아서 지우고
         ButtonList.get(i).setVisibility(View.GONE);
         ButtonList.remove(i);
@@ -709,6 +767,54 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     }
+
+    //마커수정을 위한 준비물을 준비해서 InfoEnterActivity로 보내기
+    private void setAdjustMarker(int i){
+        String myLatitude = "";
+        String myLongitude = "";
+        String name = "";
+        String place ="";
+        String memo = "";
+        double Latitude;
+        double Longitude;
+        FileInputStream fis;
+        String dummy = "";
+        try {
+            fis = openFileInput("internal.txt");
+            BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(fis)));
+            String line;
+            //원하는 값이 저장된 곳이 나올때 까지 그냥 저장하고 지움
+            for (int j = 0; j < i * 6; j++) {
+                String deline = bufferedReader.readLine();
+            }
+            //원하는 값의 내용은 저장
+            for (int j = i * 6; j < (i + 1) * 6; j++) {
+                line = bufferedReader.readLine();
+                if (j%6 == 0) myLatitude = line;
+                else if (j%6 == 1) myLongitude = line;
+                else if (j%6 == 2) name = line;
+                else if(j%6==3) place = line;
+                else if (j%6 == 4) memo = line;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //정보를 받아왔으면 그대로 보내기
+        Latitude = Double.parseDouble(myLatitude);
+        Longitude = Double.parseDouble(myLongitude);
+        Intent intent = new Intent(MapsActivity.this,InfoEnterActivity.class);
+        intent.putExtra("Latitude",Latitude);
+        intent.putExtra("Longitude",Longitude);
+        intent.putExtra("name",name);
+        intent.putExtra("place",place);
+        intent.putExtra("memo",memo);
+        intent.putExtra("order",i);
+        startActivityForResult(intent,3);
+
+    }
+
 
     /**
      * infowindow 클릭시

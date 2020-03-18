@@ -38,6 +38,10 @@ public class InfoEnterActivity extends Activity {
     private String car = "자동차";
     private String phone = "휴대폰";
     private String tablet = "태블릿";
+    private String name;
+    private String place;
+    private String memo;
+    private int order;
 
     private boolean isSelected = false;
     Button [] buttonList = new Button[6];
@@ -84,32 +88,41 @@ public class InfoEnterActivity extends Activity {
         Intent intent = getIntent();
         Longitude = intent.getDoubleExtra("Longitude",0);
         Latitude=intent.getDoubleExtra("Latitude",0);
-
+        name = intent.getStringExtra("name");
+        if(name!=null)et_objectName.setText(name);
+        place = intent.getStringExtra("place");
+        if(name!=null)et_objectLocation.setText(place);
+        memo = intent.getStringExtra("memo");
+        if(memo!=null)et_memo.setText(memo);
+        order= intent.getIntExtra("order",-1);
         // 현재위치 버튼 클릭 시
-        geocoder = new Geocoder(this);
-        btn_locationNow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<Address> list = null;
-                try {
-                    list = geocoder.getFromLocation(Latitude,Longitude, 10);
-                } catch (IOException e) {
-                    Log.e("test", "주소변환 에러");
-                }
-                if (list != null) {
-                    if (list.size() == 0) {
-                        et_objectLocation.setHint("주소가 없음");
-                    } else {
-                        if(list.get(0).getLocality() != null){ // get(0).getLocality() 가 구 인데 표기가 안되는 경우가 있어 조건문으로 표기
-                        et_objectLocation.setText(list.get(0).getAdminArea() + " " + list.get(0).getLocality()+ " " + list.get(0).getThoroughfare()+ " " + list.get(0).getFeatureName());
-                        } //getAdminArea = 대구광역시, getLocality = 동구 , getThorughfare = 입석동 , FeatureName = 123-45
-                        else{
-                        et_objectLocation.setText(list.get(0).getAdminArea() + " "  + list.get(0).getThoroughfare()+ " " + list.get(0).getFeatureName());
+        //수정하기에서 넘어왔으면 버튼 비활성화
+        if(order==-1) {
+            geocoder = new Geocoder(this);
+            btn_locationNow.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<Address> list = null;
+                    try {
+                        list = geocoder.getFromLocation(Latitude, Longitude, 10);
+                    } catch (IOException e) {
+                        Log.e("test", "주소변환 에러");
+                    }
+                    if (list != null) {
+                        if (list.size() == 0) {
+                            et_objectLocation.setHint("주소가 없음");
+                        } else {
+                            if (list.get(0).getLocality() != null) { // get(0).getLocality() 가 구 인데 표기가 안되는 경우가 있어 조건문으로 표기
+                                et_objectLocation.setText(list.get(0).getAdminArea() + " " + list.get(0).getLocality() + " " + list.get(0).getThoroughfare() + " " + list.get(0).getFeatureName());
+                            } //getAdminArea = 대구광역시, getLocality = 동구 , getThorughfare = 입석동 , FeatureName = 123-45
+                            else {
+                                et_objectLocation.setText(list.get(0).getAdminArea() + " " + list.get(0).getThoroughfare() + " " + list.get(0).getFeatureName());
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }else btn_locationNow.setVisibility(View.INVISIBLE);
         //확인 버튼 클릭 시
         btn_add_ok.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,6 +139,9 @@ public class InfoEnterActivity extends Activity {
                 i.putExtra("name",name);
                 i.putExtra("place",place);
                 i.putExtra("memo",memo);
+                i.putExtra("Latitude",Latitude);
+                i.putExtra("Longitude",Longitude);
+                i.putExtra("order",order);
                 setResult(RESULT_OK,i);
                 finish();
             }
