@@ -185,6 +185,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (resultCode == 1) { }
         }
         else if (requestCode == 3){  //수정하기버튼을 눌러서 InfoEnterActivity 화면으로 넘어갔다가 온 정보
+            if(resultCode == RESULT_OK){
             String name = data.getStringExtra("name");
             String place = data.getStringExtra("place");
             String time = data.getStringExtra("time");
@@ -193,7 +194,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             double Longitude = data.getDoubleExtra("Longitude",-1);
             int order = data.getIntExtra("order",-1);
             adjustMarker(Latitude,Longitude,name, place, memo, time,order);
-            adjustButton(name,order);
+            adjustButton(name,order);}
 
         }
 

@@ -51,7 +51,7 @@
         </activity>
         <activity
             android:name=".InfoEnterActivity"
-            android:theme="@android:style/Theme.Translucent"
+            android:theme="@android:style/Theme.Dialog"
             android:label="@string/title_activity_maps">
         </activity>
 
