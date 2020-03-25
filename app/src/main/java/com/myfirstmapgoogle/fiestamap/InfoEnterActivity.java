@@ -113,7 +113,7 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
         order= intent.getIntExtra("order",-1);
 
         // 현재위치 버튼 클릭
-        //수정하기에서 넘어왔으면 버튼
+        //수정하기에서 넘어왔으면 버튼 비활성화
         if(order==-1) {
             geocoder = new Geocoder(this);
         btn_locationNow.setOnClickListener(new View.OnClickListener() {
