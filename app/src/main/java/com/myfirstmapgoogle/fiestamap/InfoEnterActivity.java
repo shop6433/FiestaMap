@@ -108,10 +108,12 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
         if(name!=null)et_objectLocation.setText(place);
         memo = intent.getStringExtra("memo");
         if(memo!=null)et_memo.setText(memo);
+        selectedButtonNum = intent.getIntExtra("shortCut", -1);
+        if(name!=null)buttonSelect(selectedButtonNum);
         order= intent.getIntExtra("order",-1);
 
         // 현재위치 버튼 클릭
-        //수정하기에서 넘어왔으면 버튼 비활성화
+        //수정하기에서 넘어왔으면 버튼
         if(order==-1) {
             geocoder = new Geocoder(this);
         btn_locationNow.setOnClickListener(new View.OnClickListener() {
@@ -137,6 +139,10 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
                 }
             }
         });
+        }else {
+            et_objectLocation.setEnabled(false);  // 편집불가상태로 전환
+            LL_location.setVisibility(View.GONE); // 버튼레이아웃 숨기기
+        }
         //확인 버튼 클릭 시
         btn_add_ok.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,16 +174,13 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
                 i.putExtra("Latitude",Latitude);
                 i.putExtra("Longitude",Longitude);
                 i.putExtra("order",order);
-                i.putExtra("shortCut",selectedButtonNum);
+                i.putExtra("shortCut", selectedButtonNum);
                 setResult(RESULT_OK,i);
                 finish();
                 }
             }
         });
-        }else {
-            et_objectLocation.setEnabled(false);  // 편집불가상태로 전환
-            LL_location.setVisibility(View.GONE); // 버튼레이아웃 숨기기
-        }
+
         //확인 버튼 클릭 시
 
         //취소 버튼 클릭 시

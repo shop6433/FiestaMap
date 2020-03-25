@@ -208,9 +208,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             String memo = data.getStringExtra("memo");
             double Latitude = data.getDoubleExtra("Latitude",-1);
             double Longitude = data.getDoubleExtra("Longitude",-1);
-            int shortcut = data.getIntExtra("shortCut", -1);
+            int shortCut = data.getIntExtra("shortCut", -1);
             int order = data.getIntExtra("order",-1);
-            adjustMarker(Latitude,Longitude,name, place, memo, time, shortcut, order);
+            adjustMarker(Latitude,Longitude,name, place, memo, time, shortCut, order);
             adjustButton(name,order);}
 
         }
@@ -546,6 +546,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String myLongitude;
         String myShortCut;
         if (name == null && place == null && memo == null && time == null) return;
+
         //종료 시 까지 의 마커
         if(shortCut == 0)
             bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
@@ -626,7 +627,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String myLongitude;
         String myShortCut;
         if (name == null && place == null && memo == null && time == null) return;
-        //종료 시 까지 의 마커
+        //종료 시 까지 의
+
         if(shortCut == 0)
             bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
         else if(shortCut == 1)
@@ -673,7 +675,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String deline = bufferedReader.readLine();
             }
             //후에 다시 저장
-            dummy += (myLatitude + a + myLongitude + a + name + a + place + a + memo +a+ time + a + myShortCut);
+            dummy += (myLatitude + a + myLongitude + a + name + a + place + a + memo +a+ time + a + myShortCut + a);
             while ((line = bufferedReader.readLine()) != null) {
                 dummy += (line + a);
             }
@@ -705,7 +707,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String place = "";
         String memo = "";
         String time = "";
-        String myShortcut = "";
+        String myShortCut = "";
         double Latitude;
         double Longitude;
         int shortCut;
@@ -721,12 +723,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 else if (i == 3) place = data;
                 else if (i == 4) memo = data;
                 else if (i == 5) time = data;
-                else if (i == 6) myShortcut = data;
+                else if (i == 6) myShortCut = data;
                     i++;
                 if (i > 6) {
                     Latitude = Double.parseDouble(myLatitude);
                     Longitude = Double.parseDouble(myLongitude);
-                    shortCut = Integer.parseInt(myShortcut);
+                    shortCut = Integer.parseInt(myShortCut);
 
                     if(shortCut == 0)
                         bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
@@ -887,7 +889,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 else if (j%7 == 2) name = line;
                 else if(j%7==3) place = line;
                 else if (j%7 == 4) memo = line;
-                else if (j%7 == 5) myShortCut = line;
+                else if (j%7 == 6) myShortCut = line;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
