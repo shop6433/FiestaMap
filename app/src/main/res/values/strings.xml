@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">FiestaMap</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_maps">"어디 뒀지? - GPS기반 메모장"</string>
     <string name = "admob_app_id">ca-app-pub-5059688972576974~5465589991</string>
     <string name="banner_ad_unit_id">ca-app-pub-5059688972576974/2647854960</string>
     <string name="banner_ad_unit_id_for_test">ca-app-pub-3940256099942544/2247696110</string>

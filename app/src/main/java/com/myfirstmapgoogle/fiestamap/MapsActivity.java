@@ -4,8 +4,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -96,13 +100,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LinearLayout Center_btn_layout;
     private LinearLayout Left_btn_layout;
 
+    BitmapDrawable bitmapdraw;
+    Bitmap b;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mainactivity);
-        MarkBtnCount = 0;
 
+        MarkBtnCount = 0;
         mContext = this;
         //광고
 //        MobileAds.initialize(this, getString(R.string.admob_app_id));
@@ -129,6 +135,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // 화면에 띄우기
 
+        //날짜 출력
+        /**
+         * 현재시간을 구하기
+         * */
 
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
         MarkerList = new LinkedList<Marker>();
@@ -165,7 +175,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String memo = data.getStringExtra("memo");
                 double Longitude = data.getDoubleExtra("Longitude",-1);
                 double Latitude = data.getDoubleExtra("Latitude",-1);
-                myAddMarker(Latitude,Longitude,name, place, memo, time);
+                int shortCut = data.getIntExtra("shortCut",-1);
+                myAddMarker(Latitude,Longitude,name, place, memo, time, shortCut);
                 myAddButton(name);
 
             }
@@ -197,8 +208,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             String memo = data.getStringExtra("memo");
             double Latitude = data.getDoubleExtra("Latitude",-1);
             double Longitude = data.getDoubleExtra("Longitude",-1);
+            int shortcut = data.getIntExtra("shortCut", -1);
             int order = data.getIntExtra("order",-1);
-            adjustMarker(Latitude,Longitude,name, place, memo, time,order);
+            adjustMarker(Latitude,Longitude,name, place, memo, time, shortcut, order);
             adjustButton(name,order);}
 
         }
@@ -333,6 +345,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 getLocationPermission();
             }
         } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -359,6 +372,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                 mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
                             }
                         } else {
+                            Log.d(TAG, "Current location is null. Using defaults.");
+                            Log.e(TAG, "Exception: %s", task.getException());
                             mMap.moveCamera(CameraUpdateFactory
                                     .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
                             mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -367,6 +382,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
             }
         } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -432,11 +448,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         //유저에게 근처장소(likely place)를 제안하는 dialog를 보여주고, 지정된 장소에 marker 추거
                         MapsActivity.this.openPlacesDialog();
                     } else {
+                        Log.e(TAG, "Exception: %s", task.getException());
                     }
                 }
             });
         } else {
             //유저가 permission 허가를 안할 경우
+            Log.i(TAG, "The user did not grant location permission.");
 
             // Add a default marker, because the user hasn't selected a place.
             //유저가 장소를 고르지 않았기 때문에 default marker를 추가함
@@ -512,21 +530,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return mLocationPermissionGranted;
     }
 
-
-    private void myAddMarker(double Latitude,double Longitude, final String name, final String place, final String memo, final String time) {
+    /**
+     * 마커를 추가하는 매소드
+     * @param Latitude 위도
+     * @param Longitude 경도
+     * @param name 물건 이름
+     * @param place 물건 위치
+     * @param memo 메모
+     * @param time 저장시간
+     * @param shortCut 바로가기
+     */
+    private void myAddMarker(double Latitude,double Longitude, final String name, final String place, final String memo, final String time, int shortCut) {
         FileOutputStream fos;
         String myLatitude;
         String myLongitude;
+        String myShortCut;
         if (name == null && place == null && memo == null && time == null) return;
-        //종료 시 까지 의 마커 찍기위함
+        //종료 시 까지 의 마커
+        if(shortCut == 0)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
+        else if(shortCut == 1)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.book);
+        else if(shortCut == 2)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.laptop);
+        else if(shortCut == 3)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.car);
+        else if(shortCut == 4)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.phone);
+        else if(shortCut == 5)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.tablet);
+
+        b = bitmapdraw.getBitmap();
+        Bitmap smallMarker = Bitmap.createScaledBitmap(b, 100, 100, false);
 
             MarkerList.add(mMap.addMarker(new MarkerOptions().
                     position(new LatLng(Latitude,Longitude))
                     .title(name)
-                    .snippet(time + "\n" + place + "\n" + memo)));
+                    .snippet(time + "\n" + place + "\n" + memo)
+                    .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))));
             //좌표를 String 타입으로 변환
             myLatitude = Double.toString(Latitude);
             myLongitude = Double.toString(Longitude);
+            myShortCut = Integer.toString(shortCut);
             MarkBtnCount++;
             //종료후에도 저장하기 위함
             try {
@@ -543,6 +588,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 fos.write(memo.getBytes());
                 fos.write(a.getBytes());
                 fos.write(time.getBytes());
+                fos.write(a.getBytes());
+                fos.write(myShortCut.getBytes());
                 fos.write(a.getBytes());
                 fos.close();
                 //latitude, longitude, name, place, memo, time 순으로 저장, 줄바꿈으로 칸 나누기
@@ -573,11 +620,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        Toast.makeText(MapsActivity.this, "저장완료"+MarkerList.size()+" "+ButtonList.size(), Toast.LENGTH_SHORT).show();
     }
 
-    private void adjustMarker(double Latitude, double Longitude, final String name, final String place, final String memo, final String time,int order) {
+    private void adjustMarker(double Latitude, double Longitude, final String name, final String place, final String memo, final String time,int shortCut, int order) {
         FileOutputStream fos;
         String myLatitude;
         String myLongitude;
+        String myShortCut;
         if (name == null && place == null && memo == null && time == null) return;
+        //종료 시 까지 의 마커
+        if(shortCut == 0)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
+        else if(shortCut == 1)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.book);
+        else if(shortCut == 2)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.laptop);
+        else if(shortCut == 3)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.car);
+        else if(shortCut == 4)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.phone);
+        else if(shortCut == 5)
+            bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.tablet);
+
+        b = bitmapdraw.getBitmap();
+        Bitmap smallMarker = Bitmap.createScaledBitmap(b, 100, 100, false);
         //종료 시 까지 의 마커 찍기위함
         MarkerList.get(order).remove();
         MarkerList.remove(order);
@@ -588,26 +652,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         MarkerList.add(order, mMap.addMarker(new MarkerOptions().
                 position(new LatLng(Latitude, Longitude))
                 .title(name)
-                .snippet(time + "\n" + place + "\n" + memo)));
+                .snippet(time + "\n" + place + "\n" + memo)
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))));
         //좌표를 String 타입으로 변환
         myLatitude = Double.toString(Latitude);
         myLongitude = Double.toString(Longitude);
+        myShortCut = Integer.toString(shortCut);
         //종료후에도 저장하기 위함
         try {
             fis = openFileInput("internal.txt");
             BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(fis)));
             String line;
             //dummy에 한줄씩 기존 데이터를 저장하다가
-            for (int j = 0; j < order * 6; j++) {
+            for (int j = 0; j < order * 7; j++) {
                 line = bufferedReader.readLine();
                 dummy += (line + a);
             }
             //삭제된 곳이오면 버리는 곳에 저장
-            for (int j = order * 6; j < (order + 1) * 6; j++) {
+            for (int j = order * 7; j < (order + 1) * 7; j++) {
                 String deline = bufferedReader.readLine();
             }
             //후에 다시 저장
-            dummy += (myLatitude + a + myLongitude + a + name + a + place + a + memo +a+ time + a);
+            dummy += (myLatitude + a + myLongitude + a + name + a + place + a + memo +a+ time + a + myShortCut);
             while ((line = bufferedReader.readLine()) != null) {
                 dummy += (line + a);
             }
@@ -639,8 +705,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         String place = "";
         String memo = "";
         String time = "";
+        String myShortcut = "";
         double Latitude;
         double Longitude;
+        int shortCut;
         int i = 0;
         try {
             fis = openFileInput("internal.txt");
@@ -653,14 +721,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 else if (i == 3) place = data;
                 else if (i == 4) memo = data;
                 else if (i == 5) time = data;
-                i++;
-                if (i > 5) {
+                else if (i == 6) myShortcut = data;
+                    i++;
+                if (i > 6) {
                     Latitude = Double.parseDouble(myLatitude);
                     Longitude = Double.parseDouble(myLongitude);
+                    shortCut = Integer.parseInt(myShortcut);
+
+                    if(shortCut == 0)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.bike);
+                    else if(shortCut == 1)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.book);
+                    else if(shortCut == 2)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.laptop);
+                    else if(shortCut == 3)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.car);
+                    else if(shortCut == 4)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.phone);
+                    else if(shortCut == 5)
+                        bitmapdraw=(BitmapDrawable)getResources().getDrawable(R.drawable.tablet);
+
+                    b = bitmapdraw.getBitmap();
+                    Bitmap smallMarker = Bitmap.createScaledBitmap(b, 100, 100, false);
+
                     MarkerList.add(mMap.addMarker(new MarkerOptions().
-                            position(new LatLng(Latitude, Longitude))
+                            position(new LatLng(Latitude,Longitude))
                             .title(name)
-                            .snippet(time + "\n" + place + "\n" + memo)));
+                            .snippet(time + "\n" + place + "\n" + memo)
+                            .icon(BitmapDescriptorFactory.fromBitmap(smallMarker))));
                     MarkBtnCount++;
                     i = 0;
                 }
@@ -706,7 +794,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     j++;
                 }
                 i++;
-                if (i > 5) i = 0;
+                if (i > 6) i = 0;
                 data = bufferedReader.readLine();
             }
         } catch (FileNotFoundException e) {
@@ -726,11 +814,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             fis = openFileInput("internal.txt");
             BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(fis)));
             String line;
-            for (int j = 0; j < i * 6; j++) {
+            for (int j = 0; j < i * 7; j++) {
                 line = bufferedReader.readLine();
                 dummy += (line + "\r\n");
             }
-            for (int j = i * 6; j < (i + 1) * 6; j++) {
+            for (int j = i * 6; j < (i + 1) * 7; j++) {
                 String deline = bufferedReader.readLine();
             }
             while ((line = bufferedReader.readLine()) != null) {
@@ -774,11 +862,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void setAdjustMarker(int i){
         String myLatitude = "";
         String myLongitude = "";
+        String myShortCut = "";
         String name = "";
         String place ="";
         String memo = "";
         double Latitude;
         double Longitude;
+        int shortCut;
         FileInputStream fis;
         String dummy = "";
         try {
@@ -786,17 +876,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             BufferedReader bufferedReader = new BufferedReader((new InputStreamReader(fis)));
             String line;
             //원하는 값이 저장된 곳이 나올때 까지 그냥 저장하고 지움
-            for (int j = 0; j < i * 6; j++) {
+            for (int j = 0; j < i * 7; j++) {
                 String deline = bufferedReader.readLine();
             }
             //원하는 값의 내용은 저장
-            for (int j = i * 6; j < (i + 1) * 6; j++) {
+            for (int j = i * 7; j < (i + 1) * 7; j++) {
                 line = bufferedReader.readLine();
-                if (j%6 == 0) myLatitude = line;
-                else if (j%6 == 1) myLongitude = line;
-                else if (j%6 == 2) name = line;
-                else if(j%6==3) place = line;
-                else if (j%6 == 4) memo = line;
+                if (j%7 == 0) myLatitude = line;
+                else if (j%7 == 1) myLongitude = line;
+                else if (j%7 == 2) name = line;
+                else if(j%7==3) place = line;
+                else if (j%7 == 4) memo = line;
+                else if (j%7 == 5) myShortCut = line;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -806,12 +897,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //정보를 받아왔으면 그대로 보내기
         Latitude = Double.parseDouble(myLatitude);
         Longitude = Double.parseDouble(myLongitude);
+        shortCut = Integer.parseInt(myShortCut);
         Intent intent = new Intent(MapsActivity.this,InfoEnterActivity.class);
         intent.putExtra("Latitude",Latitude);
         intent.putExtra("Longitude",Longitude);
         intent.putExtra("name",name);
         intent.putExtra("place",place);
         intent.putExtra("memo",memo);
+        intent.putExtra("shortCut", shortCut);
         intent.putExtra("order",i);
         startActivityForResult(intent,3);
 
@@ -905,8 +998,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        TempMarkerList.get(0).remove();
-        TempMarkerList.clear();
+        if(TempMarkerList.size()>=1){
+            TempMarkerList.get(0).remove();
+            TempMarkerList.clear();
+        }
         marker.showInfoWindow();
         return true;
     }
