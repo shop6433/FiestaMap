@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">FiestaMap</string>
     <string name="title_activity_maps">Map</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name = "admob_app_id">ca-app-pub-5059688972576974~5465589991</string>
+    <string name="banner_ad_unit_id">ca-app-pub-5059688972576974/2647854960</string>
+    <string name="banner_ad_unit_id_for_test">ca-app-pub-3940256099942544/2247696110</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

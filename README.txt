@@ -7,6 +7,10 @@ Fiesta Map 개발자 Fecth note
 디자인
 인포윈도우 커스텀
 
+v.1.0.19 변경사항(200318)
+-infoEnterActivity.java 파일 코드 간략화 및 테마를 Dialog로 변경
+-정보입력창 디자인 수정
+
 v.1.0.18 변경사항(200318)
 -정보 수정기능 추가
 

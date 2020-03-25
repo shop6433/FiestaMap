@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -44,6 +43,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +52,7 @@ import java.util.List;
  * 현재위치를 보여주는 액티비티
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
-        GoogleMap.OnInfoWindowLongClickListener,Button.OnClickListener,Button.OnLongClickListener {
+        GoogleMap.OnInfoWindowLongClickListener,Button.OnClickListener,Button.OnLongClickListener, GoogleMap.OnMapClickListener, GoogleMap.OnMarkerClickListener {
 
 
     public static Context mContext;
@@ -88,6 +88,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng[] mLikelyPlaceLatLngs;
     private LinkedList<Marker> MarkerList;
     private LinkedList<Button> ButtonList;
+    private ArrayList<Marker> TempMarkerList;
     int MarkBtnCount;
     int count = 0;
     int a;
@@ -95,13 +96,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LinearLayout Center_btn_layout;
     private LinearLayout Left_btn_layout;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mainactivity);
-
         MarkBtnCount = 0;
+
         mContext = this;
+        //광고
+//        MobileAds.initialize(this, getString(R.string.admob_app_id));
+//        mAdView = findViewById(R.id.adView);
+//        AdRequest adRequest = new AdRequest.Builder().build();
+//        mAdView.loadAd(adRequest);
 
         //저장된 인스턴스 상태에 의해 얻어진 장소와 카메라 포지션
         if (savedInstanceState != null) {  //저장된 장소가 있으면
@@ -122,19 +129,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // 화면에 띄우기
 
-        //날짜 출력
-        /**
-         * 현재시간을 구하기
-         * */
 
         //추가 버튼누르면 버튼 내용 바뀌는거 임의로 적어둔거임
         MarkerList = new LinkedList<Marker>();
         ButtonList = new LinkedList<Button>();
+        TempMarkerList = new ArrayList<Marker>();
 
         //추가된 물건 버튼
 
         Button btn_add = findViewById(R.id.btn_add); // 물건추가 버튼
-
+        Button btn_add2 = findViewById(R.id.btn_add2);
+        btn_add2.setEnabled(false);
         //물건추가 버튼 클릭시,
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,17 +190,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (resultCode == 1) { }
         }
         else if (requestCode == 3){  //수정하기버튼을 눌러서 InfoEnterActivity 화면으로 넘어갔다가 온 정보
-            if(resultCode==RESULT_OK){
-                String name = data.getStringExtra("name");
-                String place = data.getStringExtra("place");
-                String time = data.getStringExtra("time");
-                String memo = data.getStringExtra("memo");
-                double Latitude = data.getDoubleExtra("Latitude", -1);
-                double Longitude = data.getDoubleExtra("Longitude", -1);
-                int order = data.getIntExtra("order", -1);
-                adjustMarker(Latitude, Longitude, name, place, memo, time, order);
-                adjustButton(name, order);
-            }
+            if(resultCode == RESULT_OK){
+            String name = data.getStringExtra("name");
+            String place = data.getStringExtra("place");
+            String time = data.getStringExtra("time");
+            String memo = data.getStringExtra("memo");
+            double Latitude = data.getDoubleExtra("Latitude",-1);
+            double Longitude = data.getDoubleExtra("Longitude",-1);
+            int order = data.getIntExtra("order",-1);
+            adjustMarker(Latitude,Longitude,name, place, memo, time,order);
+            adjustButton(name,order);}
+
         }
 
     }
@@ -249,6 +254,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = map;
         mMap.setOnInfoWindowClickListener(this);
         mMap.setOnInfoWindowLongClickListener(this);
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerClickListener(this);
 
 
         //유저에게 permission을 촉발시키기
@@ -326,7 +333,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 getLocationPermission();
             }
         } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -353,8 +359,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                                 mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
                             }
                         } else {
-                            Log.d(TAG, "Current location is null. Using defaults.");
-                            Log.e(TAG, "Exception: %s", task.getException());
                             mMap.moveCamera(CameraUpdateFactory
                                     .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
                             mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -363,7 +367,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
             }
         } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -429,13 +432,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         //유저에게 근처장소(likely place)를 제안하는 dialog를 보여주고, 지정된 장소에 marker 추거
                         MapsActivity.this.openPlacesDialog();
                     } else {
-                        Log.e(TAG, "Exception: %s", task.getException());
                     }
                 }
             });
         } else {
             //유저가 permission 허가를 안할 경우
-            Log.i(TAG, "The user did not grant location permission.");
 
             // Add a default marker, because the user hasn't selected a place.
             //유저가 장소를 고르지 않았기 때문에 default marker를 추가함
@@ -846,6 +847,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    //버튼 클릭
     @Override
     public void onClick(View v) {
         int i = 0;
@@ -859,7 +861,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         MarkerList.get(i).getPosition().longitude), DEFAULT_ZOOM));
 
     }
-
+    //버튼 롱클릭
     @Override
     public boolean onLongClick(View v) {
         int i = 0;
@@ -871,5 +873,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             intent.putExtra("ORDER", i);
             startActivityForResult(intent, 2);
             return true;
+    }
+
+    @Override
+    public void onMapClick(final LatLng latLng){
+        if(TempMarkerList.size()>=1){
+            TempMarkerList.get(0).remove();
+            TempMarkerList.clear();
+        }
+        TempMarkerList.add(mMap.addMarker(new MarkerOptions().
+                position(new LatLng(latLng.latitude,latLng.longitude))
+                .title("여기에 추가 하시겠어요?")));
+        TempMarkerList.get(0).showInfoWindow();
+
+        final Button btn_add2 = findViewById(R.id.btn_add2);
+        btn_add2.setEnabled(true);
+        btn_add2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TempMarkerList.get(0).remove();
+                TempMarkerList.clear();
+                Intent intent = new Intent(MapsActivity.this, InfoEnterActivity.class); // 정보입력창 액티비티 호출
+                intent.putExtra("Latitude", latLng.latitude); // 위도와 경도 값 전달
+                intent.putExtra("Longitude", latLng.longitude);
+                startActivityForResult(intent, 1);
+                btn_add2.setEnabled(false);
+            }
+        });
+
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        TempMarkerList.get(0).remove();
+        TempMarkerList.clear();
+        marker.showInfoWindow();
+        return true;
     }
 }
