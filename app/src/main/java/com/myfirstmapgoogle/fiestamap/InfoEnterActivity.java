@@ -1,7 +1,9 @@
 package com.myfirstmapgoogle.fiestamap;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
@@ -28,12 +30,15 @@ import java.util.Date;
 import java.util.List;
 
 public class InfoEnterActivity extends Activity implements Button.OnClickListener, Button.OnLongClickListener{
+    private AlertDialog.Builder builder;
+
     private EditText et_objectName;
     private EditText et_objectLocation;
     private EditText et_memo;
     private Geocoder geocoder;
 
     private boolean isSelected = false;
+    private int selectedButtonNum = -1 ;
     private Button [] buttonList = new Button[6];
     private String [] nameList = new String[6];  // 바로가기 버튼의 이름을 배열로 처리
     boolean selectedButton[] = {false,false,false,false,false,false};
@@ -53,6 +58,8 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
         setContentView(R.layout.infoenteractivity);
 
         loadData(); // 기기에 저장된 바로가기 값을 불러옴
+
+        builder = new AlertDialog.Builder(this); // 경고창
 
         //정보입력창의 바로가기 버튼
         buttonList[0] = findViewById(R.id.btn_bike);
@@ -136,6 +143,18 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
         btn_add_ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(isSelected == false){
+                    builder.setTitle("경고!").setMessage("바로가기 아이콘을 선택해주세요");
+                    builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        return;
+                        }
+                    });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+                }
+                else{
                 String time = tv_dateNow.getText().toString(); // 입력 값을 추출 후
                 String name = et_objectName.getText().toString();
                 String place = et_objectLocation.getText().toString();
@@ -151,8 +170,10 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
                 i.putExtra("Latitude",Latitude);
                 i.putExtra("Longitude",Longitude);
                 i.putExtra("order",order);
+                i.putExtra("shortCut",selectedButtonNum);
                 setResult(RESULT_OK,i);
                 finish();
+                }
             }
         });
         }else {
@@ -173,7 +194,6 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
                 finish(); // 종료
             }
         });
-
 
         for(int i = 0 ; i <=5 ; i++){
             buttonList[i].setOnClickListener(this);
@@ -263,6 +283,7 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
             buttonList[index].setSelected(true); // 눌린 버튼을 선택된 상태로 변경
             selectedButton[index] = true;
             isSelected = true;
+            selectedButtonNum = index;
             et_objectName.setText(nameList[index]);
         }
         else if(selectedButton[index] == false && isSelected == true){ // 누른 버튼은 선택되어 있지 않으나 다른 버튼이 눌려 있다면
@@ -273,12 +294,14 @@ public class InfoEnterActivity extends Activity implements Button.OnClickListene
             buttonList[index].setSelected(true); // 누른 버튼을 선택된 상태로 변경
             selectedButton[index]= true;
             isSelected = true;
+            selectedButtonNum = index;
             et_objectName.setText(nameList[index]);
         }
         else if(selectedButton[index]== true && isSelected == true) { // 누른 버튼이 이미 선택된 버튼이라면
             buttonList[index].setSelected(false); // 선택되지 않은 상태로 변경
             selectedButton[index] = false;
             isSelected = false;
+            selectedButtonNum = -1;
             et_objectName.setText("");
         }
     }
